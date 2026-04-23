@@ -60,7 +60,7 @@ IRQ      = $(PRJ_ROOT)/lib/irq.c
 LINK_LD  = $(PRJ_ROOT)/sys/link.ld
 
 # 测试用例主程序源文件
-TEST_DIR = $(PRJ_ROOT)/tests/$(CTEST)
+TEST_DIR = $(PRJ_ROOT)/tests/uart_tests/$(CTEST)
 TEST_SRC = $(TEST_DIR)/main.c
 
 # 完整源文件列表：启动代码 + 测试主程序 + retarget 库
