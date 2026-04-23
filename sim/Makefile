@@ -2,7 +2,7 @@
 PROJ_ROOT := $(abspath ..)
 PULP_ROOT := $(PROJ_ROOT)/repo/pulpino
 DEBUG     ?= 0
-TEST      ?= base_test
+TEST      ?= pulpino_uart_test
 CTEST     ?= tc_uart_hello
 VERBOSITY ?= UVM_MEDIUM
 XPROP     ?= 0

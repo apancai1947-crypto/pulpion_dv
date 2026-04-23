@@ -270,9 +270,11 @@ tb/coverage/apb_coverage.sv
 
 // Sequences
 seq_lib/base_seq.sv
+seq_lib/uart_dce_rx_sequence.sv
 
 // Tests
 tests/base_test.sv
+tests/pulpino_uart_test.sv
 
 // Testbench top
 tb/tb_top.sv
