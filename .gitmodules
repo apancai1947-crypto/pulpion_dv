@@ -1,0 +1,3 @@
+[submodule "repo/pulpino"]
+	path = repo/pulpino
+	url = https://github.com/pulp-platform/pulpino.git

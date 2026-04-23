@@ -1,0 +1,28 @@
+# --- PULPino DV Git Ignore ---
+
+# User Specific Exclusions
+debug/
+sim/build/
+doc/0418_conversation.md
+
+# Tool Outputs
+*.log
+*.key
+*.vdb
+*.daidir
+*.so
+simv*
+ucli.key
+vc_hdrs.h
+
+# C/Firmware artifacts
+c/build/
+fw/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# OS Files
+.DS_Store
+Thumbs.db

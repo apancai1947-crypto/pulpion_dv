@@ -1,0 +1,17 @@
+
+`ifndef GUARD_UART_RESET_IF_SVI
+`define GUARD_UART_RESET_IF_SVI
+
+/**
+ * UART reset interface — provides reset signal access for VIP sequences.
+ */
+interface uart_reset_if();
+
+  logic reset;
+  logic clk;
+
+  modport uart_reset_modport (input clk, output reset);
+
+endinterface
+
+`endif // GUARD_UART_RESET_IF_SVI
