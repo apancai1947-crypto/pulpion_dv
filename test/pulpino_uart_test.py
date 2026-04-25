@@ -19,8 +19,8 @@ class uart_base_build(Build):
 
 class uart_loopback_build(uart_base_build):
     name = "uart_loopback"
-    vlog_opt += "+define+LOOPBACK"
-    elab_opt += "-xprop=tmerge"
+    vlog_opt += " +define+LOOPBACK"
+    elab_opt += " -xprop=tmerge"
 
 
 # ===== Test 层 =====

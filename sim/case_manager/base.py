@@ -48,21 +48,22 @@ class Test(metaclass=InheritableMeta):
     prerun_script = ""
     postrun_script = ""
 
-    def get_prerun_script(self, out_dir):
+    @classmethod
+    def get_prerun_script(cls, out_dir):
         """Return the prerun script command.
 
         If prerun_script is set, use it (with {name} substitution).
         Otherwise, auto-generate from c_test and c_defines.
         """
-        if self.prerun_script:
-            return self.prerun_script.replace("{name}", self.name)
+        if cls.prerun_script:
+            return cls.prerun_script.replace("{name}", cls.name)
 
-        if not self.c_test:
+        if not cls.c_test:
             return ""
 
-        fw_out = f"{out_dir}/{self.name}/fw"
-        cmd = f"make -C ../c CTEST={self.c_test} OUT={fw_out} all"
-        if self.c_defines:
-            defines = " ".join(f"-D{k}={v}" for k, v in self.c_defines.items())
+        fw_out = f"{out_dir}/{cls.name}/fw"
+        cmd = f"make -C ../c CTEST={cls.c_test} OUT={fw_out} all"
+        if cls.c_defines:
+            defines = " ".join(f"-D{k}={v}" for k, v in cls.c_defines.items())
             cmd += f' CFLAGS+="{defines}"'
         return cmd
