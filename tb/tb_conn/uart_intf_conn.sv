@@ -13,7 +13,11 @@
     assign uart_cts  = uart_dce_if.rts  ;
     assign uart_dce_if.cts  = uart_rts  ;
 
+    // Resolve X/Z on VIP outputs during reset (active-low: pullup = inactive)
+    pullup (uart_dce_if.rts);   // CTS_N idle high → DUT sees CTS inactive initially
+    pullup (uart_dce_if.sin);   // RX idle high
+
     /** Set the DCE BFM Port Interface to factory */
     initial begin
         uvm_config_db#(virtual interface svt_uart_if)::set(uvm_root::get(), "uvm_test_top.env", "dce_vif", uart_dce_if);
-    end
+    end

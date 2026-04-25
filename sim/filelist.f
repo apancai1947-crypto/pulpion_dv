@@ -39,11 +39,11 @@ repo/pulpino/ips/apb/apb_uart_sv/uart_tx.sv
 repo/pulpino/ips/apb/apb_gpio/apb_gpio.sv
 repo/pulpino/ips/apb/apb_spi_master/apb_spi_master.sv
 repo/pulpino/ips/apb/apb_spi_master/spi_master_apb_if.sv
-repo/pulpino/ips/apb/apb_spi_master/spi_master_clkgen.sv
-repo/pulpino/ips/apb/apb_spi_master/spi_master_controller.sv
-repo/pulpino/ips/apb/apb_spi_master/spi_master_fifo.sv
-repo/pulpino/ips/apb/apb_spi_master/spi_master_rx.sv
-repo/pulpino/ips/apb/apb_spi_master/spi_master_tx.sv
+repo/pulpino/ips/axi/axi_spi_master/spi_master_clkgen.sv
+repo/pulpino/ips/axi/axi_spi_master/spi_master_controller.sv
+repo/pulpino/ips/axi/axi_spi_master/spi_master_fifo.sv
+repo/pulpino/ips/axi/axi_spi_master/spi_master_rx.sv
+repo/pulpino/ips/axi/axi_spi_master/spi_master_tx.sv
 repo/pulpino/ips/apb/apb_timer/apb_timer.sv
 repo/pulpino/ips/apb/apb_timer/timer.sv
 repo/pulpino/ips/apb/apb_event_unit/apb_event_unit.sv
@@ -115,7 +115,7 @@ repo/pulpino/ips/axi/axi_spi_slave/spi_slave_regs.sv
 repo/pulpino/ips/axi/axi_spi_slave/spi_slave_rx.sv
 repo/pulpino/ips/axi/axi_spi_slave/spi_slave_syncro.sv
 repo/pulpino/ips/axi/axi_spi_slave/spi_slave_tx.sv
-repo/pulpino/ips/axi/core2axi/rtl/core2axi.sv
+repo/pulpino/ips/axi/core2axi/core2axi.sv
 repo/pulpino/ips/axi/axi_slice_dc/dc_token_ring.v
 repo/pulpino/ips/axi/axi_slice_dc/dc_token_ring_fifo_din.v
 repo/pulpino/ips/axi/axi_slice_dc/dc_token_ring_fifo_dout.v

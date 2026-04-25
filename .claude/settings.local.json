@@ -4,7 +4,17 @@
       "Bash(unzip:*)",
       "Bash(mkdir -p __TRACKED_VAR__/.claude/plugins)",
       "Bash(cp -r /tmp/andrej-karpathy-skills/andrej-karpathy-skills-main __TRACKED_VAR__/.claude/plugins/)",
-      "Bash(docker exec 828e83272623:*)"
+      "Bash(docker exec 828e83272623:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(/login)",
+      "Bash(git submodule:*)",
+      "Bash(git clone:*)",
+      "Bash(pip install:*)",
+      "mcp__MCP_DOCKER__mcp-find",
+      "WebSearch"
     ]
   }
 }

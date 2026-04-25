@@ -83,6 +83,30 @@ class soc_env extends uvm_env;
         dce_cfg.is_active = 1;
         dce_cfg.set_uart_if(dce_vif);
         dce_cfg.baud_divisor = 2;  // 25MHz/(16*2) = 781250 baud, matches PULPino UART_DIVISOR=31
+
+        // Apply UART config from plusargs (via soc_config)
+        dce_cfg.data_width   = cfg.uart_data_width;
+        dce_cfg.parity_type  = cfg.uart_parity_type;
+        // stop_bit is an enum — cast int to enum type
+        case (cfg.uart_stop_bit)
+            0: dce_cfg.stop_bit = svt_uart_configuration::ONE_BIT;
+            1: dce_cfg.stop_bit = svt_uart_configuration::ONE_FIVE_BIT;
+            2: dce_cfg.stop_bit = svt_uart_configuration::TWO_BIT;
+            default: dce_cfg.stop_bit = svt_uart_configuration::ONE_BIT;
+        endcase
+
+        // Disable hardware flow control checking
+        if (cfg.uart_disable_hw_handshake) begin
+            dce_cfg.enable_rts_cts_handshake = 0;
+            dce_cfg.enable_dtr_dsr_handshake = 0;
+            dce_cfg.enable_tx_rx_handshake   = 0;
+        end
+
+        `uvm_info(get_type_name(), $sformatf(
+            "DCE VIP config: data_width=%0d, parity_type=%0d, stop_bit=%0d, hw_hs_disabled=%0b",
+            dce_cfg.data_width, dce_cfg.parity_type, dce_cfg.stop_bit,
+            cfg.uart_disable_hw_handshake), UVM_LOW)
+
         uvm_config_db#(svt_uart_agent_configuration)::set(this, "dce_agent", "cfg", dce_cfg);
         dce_agent = svt_uart_agent::type_id::create("dce_agent", this);
 

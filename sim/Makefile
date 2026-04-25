@@ -14,20 +14,7 @@ ZERO_RV32E     ?= 0
 OUT       := $(PROJ_ROOT)/debug/$(TEST)_$(CTEST)
 FW_OUT    := $(OUT)/fw
 
-# ==========================
-# UART VIP 配置（已修复库路径）
-# ==========================
-DESIGNWARE_HOME ?= /usr/Synopsys/vip_2018_09
-SVT_UART_VERSION ?= latest
-PLATFORM         ?= linux64
-
 # UART VIP 路径
-SVT_COMMON_DIR   := $(DESIGNWARE_HOME)/vip/svt/common/$(SVT_UART_VERSION)/sverilog
-SVT_COMMON_INC   := $(SVT_COMMON_DIR)/include
-SVT_COMMON_PKG 	 := $(SVT_COMMON_INC)/svt.uvm.pkg
-SVT_LIB_DIR      := $(DESIGNWARE_HOME)/vip/common/$(SVT_UART_VERSION)/C/lib/$(PLATFORM)
-SVT_LIB          := VipCommonNtb.so
-
 SVT_UART_DIR 	 ?= /opt/sv_pkgs/uvm/svt_2018.09/svt_uart
 
 # ============================================
@@ -61,14 +48,17 @@ VCS_BASE_OPTS := -full64 -sverilog -ntb_opts uvm-1.2 \
 
 ifeq ($(DEBUG), 0)
     DBG_OPTS :=
-    SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm
+    SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm \
+                +UART_DATA_WIDTH=8 +UART_PARITY_TYPE=0 +UART_STOP_BIT=0 +UART_DISABLE_HW_HANDSHAKE
 else ifeq ($(DEBUG), 1)
     DBG_OPTS := -debug_access+pp -kdb -lca
-    SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm
+    SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm \
+                +UART_DATA_WIDTH=8 +UART_PARITY_TYPE=0 +UART_STOP_BIT=0 +UART_DISABLE_HW_HANDSHAKE
 else
     DBG_OPTS := -debug_access+all -kdb -lca -fsdb +define+FSDB_DUMP
     SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +DUMP_WAVE +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm \
-                +FSDB_FILE=$(OUT)/novas.fsdb
+                +FSDB_FILE=$(OUT)/novas.fsdb \
+                +UART_DATA_WIDTH=8 +UART_PARITY_TYPE=0 +UART_STOP_BIT=0 +UART_DISABLE_HW_HANDSHAKE
 endif
 
 ifeq ($(XPROP), 1)

@@ -8,8 +8,38 @@ import uvm_pkg::*;
 class pulpino_uart_test extends base_test;
     `uvm_component_utils(pulpino_uart_test)
 
+    // FIFO to bridge VIP monitor's analysis port (broadcast) to blocking get
+    uvm_tlm_analysis_fifo#(svt_uart_transaction) tx_xact_fifo;
+
     function new(string name = "pulpino_uart_test", uvm_component parent = null);
         super.new(name, parent);
+    endfunction
+
+    virtual function void build_phase(uvm_phase phase);
+        int tmp_int;
+
+        super.build_phase(phase);
+        tx_xact_fifo = new("tx_xact_fifo", this);
+
+        // Parse UART plusargs into soc_config
+        if ($value$plusargs("UART_DATA_WIDTH=%d", tmp_int))
+            cfg.uart_data_width = tmp_int;
+        if ($value$plusargs("UART_PARITY_TYPE=%d", tmp_int))
+            cfg.uart_parity_type = tmp_int;
+        if ($value$plusargs("UART_STOP_BIT=%d", tmp_int))
+            cfg.uart_stop_bit = tmp_int;
+        if ($test$plusargs("UART_DISABLE_HW_HANDSHAKE"))
+            cfg.uart_disable_hw_handshake = 1;
+
+        `uvm_info(get_type_name(), $sformatf(
+            "UART config: data_width=%0d, parity_type=%0d, stop_bit=%0d, disable_hw_hs=%0b",
+            cfg.uart_data_width, cfg.uart_parity_type, cfg.uart_stop_bit,
+            cfg.uart_disable_hw_handshake), UVM_LOW)
+    endfunction
+
+    virtual function void connect_phase(uvm_phase phase);
+        super.connect_phase(phase);
+        env.dce_agent.monitor.tx_xact_observed_port.connect(tx_xact_fifo.analysis_export);
     endfunction
 
     virtual task run_phase(uvm_phase phase);
@@ -32,12 +62,12 @@ class pulpino_uart_test extends base_test;
         uart_dce_rx_sequence rx_seq;
 
         forever begin
-            // Block until VIP monitor observes a TX transaction
-            env.dce_agent.monitor.tx_xact_observed_port.get(tx);
+            // Block until VIP monitor observes a TX transaction (via FIFO bridge)
+            tx_xact_fifo.get(tx);
 
             // Extract received byte and drive back via sequence
             rx_seq = uart_dce_rx_sequence::type_id::create("rx_seq");
-            rx_seq.payload_byte = tx.received_packet[0][7:0];
+            rx_seq.payload_byte = tx.payload[0];
             rx_seq.start(env.dce_agent.sequencer);
         end
     endtask
