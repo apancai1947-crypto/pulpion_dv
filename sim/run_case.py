@@ -69,8 +69,11 @@ def main():
     else:
         tests_to_run = all_tests
 
+    # Make output dir absolute (relative to project root, not sim/)
+    out_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", args.o))
+
     # Run
-    success = run_all(tests_to_run, args.o, args, args.extra)
+    success = run_all(tests_to_run, out_dir, args, args.extra)
     sys.exit(0 if success else 1)
 
 

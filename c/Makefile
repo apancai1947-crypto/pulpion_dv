@@ -79,6 +79,7 @@ SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ)
 # -Wall            — 开启所有常见警告
 CFLAGS = -march=rv32i -mabi=ilp32 -mcmodel=medany -ffreestanding -O2 -g
 CFLAGS += $(C_INCLUDES) -Wall
+CFLAGS += $(EXTRA_CFLAGS)
 
 # -nostartfiles — 不链接 crt0 等启动文件（由 startup.S 提供）
 # -nostdlib     — 不链接标准 C 库（由 retarget.c 提供最小实现）

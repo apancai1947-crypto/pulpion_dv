@@ -1,4 +1,5 @@
 import copy
+import os
 
 
 class InheritableMeta(type):
@@ -56,14 +57,16 @@ class Test(metaclass=InheritableMeta):
         Otherwise, auto-generate from c_test and c_defines.
         """
         if cls.prerun_script:
-            return cls.prerun_script.replace("{name}", cls.name)
+            return cls.prerun_script.replace("{name}", cls.name).replace("{out_dir}", out_dir)
 
         if not cls.c_test:
             return ""
 
         fw_out = f"{out_dir}/{cls.name}/fw"
-        cmd = f"make -C ../c CTEST={cls.c_test} OUT={fw_out} all"
+        proj_root = os.path.normpath(os.path.join(out_dir, ".."))
+        c_dir = os.path.join(proj_root, "c")
+        cmd = f"make -C {c_dir} CTEST={cls.c_test} OUT={fw_out} all"
         if cls.c_defines:
             defines = " ".join(f"-D{k}={v}" for k, v in cls.c_defines.items())
-            cmd += f' CFLAGS+="{defines}"'
+            cmd += f' EXTRA_CFLAGS="{defines}"'
         return cmd

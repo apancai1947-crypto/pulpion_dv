@@ -12,6 +12,31 @@ def compute_build_hash(build_cls, global_opts=""):
     return hashlib.md5(content.encode()).hexdigest()[:8]
 
 
+def _build_incdir_opts(proj_root):
+    """Build +incdir+ options for VCS from project root."""
+    pulp_root = os.path.join(proj_root, "repo", "pulpino")
+    svt_uart_dir = "/opt/sv_pkgs/uvm/svt_2018.09/svt_uart"
+    dirs = [
+        os.path.join(svt_uart_dir, "include", "verilog"),
+        os.path.join(svt_uart_dir, "include", "sverilog"),
+        os.path.join(svt_uart_dir, "src", "verilog", "vcs"),
+        os.path.join(svt_uart_dir, "src", "sverilog", "vcs"),
+        os.path.join(pulp_root, "rtl", "includes"),
+        os.path.join(pulp_root, "tb"),
+        os.path.join(proj_root, "tb"),
+        os.path.join(proj_root, "tb", "env"),
+        os.path.join(proj_root, "tests"),
+        os.path.join(proj_root, "seq_lib"),
+        os.path.join(pulp_root, "ips", "riscv", "include"),
+        os.path.join(pulp_root, "ips", "zero-riscy", "include"),
+        os.path.join(pulp_root, "ips", "apb", "apb_event_unit", "include"),
+        os.path.join(pulp_root, "ips", "apb", "apb_i2c"),
+        os.path.join(pulp_root, "ips", "adv_dbg_if", "rtl"),
+        os.path.join(pulp_root, "ips", "axi", "axi_node"),
+    ]
+    return " ".join(f"+incdir+{d}" for d in dirs if os.path.isdir(d))
+
+
 def get_global_opts(args):
     """Build global option strings from CLI args for vlog and sim."""
     vlog_opts = []
@@ -40,20 +65,22 @@ def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
 
     os.makedirs(build_dir, exist_ok=True)
 
-    vlog_opts = f"{build_cls.vlog_opt} {global_vlog_opts}".strip()
+    # VCS must run from project root (filelist uses relative paths)
+    proj_root = os.path.normpath(os.path.join(out_dir, ".."))
+    incdir_opts = _build_incdir_opts(proj_root)
+    vlog_opts = f"{build_cls.vlog_opt} {incdir_opts} {global_vlog_opts}".strip()
     elab_opts = build_cls.elab_opt.strip()
 
-    # Locate filelist.f relative to sim/
-    sim_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sim_dir = os.path.join(proj_root, "sim")
     filelist = os.path.join(sim_dir, "filelist.f")
 
     cmd = (
-        f"cd {build_dir} && "
+        f"cd {proj_root} && "
         f"vcs {vlog_opts} {elab_opts} "
         f"-f {filelist} "
         f"-top tb_top "
-        f"-o simv "
-        f"-l compile.log"
+        f"-o {build_dir}/simv "
+        f"-l {build_dir}/compile.log"
     )
 
     if dry_run:
@@ -61,7 +88,7 @@ def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
         return build_dir
 
     print(f"[BUILD] Compiling .{build_hash} ({build_cls.name})...")
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if result.returncode != 0:
         print(f"[BUILD] FAILED .{build_hash}:\n{result.stderr}", file=sys.stderr)
         raise RuntimeError(f"Build failed: {build_cls.name}")
@@ -113,7 +140,7 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
             print(f"[DRY-RUN] [{test_name}] prerun: {prerun}")
         else:
             print(f"[SIM] [{test_name}] Running prerun...")
-            result = subprocess.run(prerun, shell=True, capture_output=True, text=True)
+            result = subprocess.run(prerun, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             if result.returncode != 0:
                 return (test_name, "FAIL", f"prerun failed: {result.stderr[:200]}")
 
@@ -126,6 +153,7 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
     uvm_test_arg = f"+UVM_TESTNAME={test_cls.uvm_test}" if test_cls.uvm_test else ""
     sim_cmd = (
         f"cd {test_dir} && "
+        f"DESIGNWARE_HOME=/opt/sv_pkgs/uvm/svt_2018.09 "
         f"./simv "
         f"{sim_opt_clean} "
         f"{uvm_test_arg} "
@@ -139,7 +167,7 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
         return (test_name, "DRY-RUN", "")
 
     print(f"[SIM] [{test_name}] Running simulation...")
-    result = subprocess.run(sim_cmd, shell=True, capture_output=True, text=True)
+    result = subprocess.run(sim_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     # Determine pass/fail from log
     log_path = os.path.join(test_dir, "simv.log")
@@ -163,7 +191,7 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
         if dry_run:
             print(f"[DRY-RUN] [{test_name}] postrun: {postrun}")
         else:
-            subprocess.run(postrun, shell=True, capture_output=True, text=True)
+            subprocess.run(postrun, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     # Delete passed files if requested
     if delete_passed and status == "PASS" and not dry_run:

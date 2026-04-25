@@ -11,6 +11,7 @@ class uart_base_build(Build):
     tag = ["uart"]
     vlog_opt = (
         "+vcs+lic+wait "
+        "-full64 -sverilog -ntb_opts uvm-1.2 "
         "-timescale=1ns/1ps "
     )
     elab_opt = "-debug_access+pp"
