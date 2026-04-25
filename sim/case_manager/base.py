@@ -69,4 +69,7 @@ class Test(metaclass=InheritableMeta):
         if cls.c_defines:
             defines = " ".join(f"-D{k}={v}" for k, v in cls.c_defines.items())
             cmd += f' EXTRA_CFLAGS="{defines}"'
+        # Copy firmware.slm to l2_stim.slm and create dummy tcdm_bank0.slm
+        cmd += f" && cp {fw_out}/firmware.slm {fw_out}/l2_stim.slm"
+        cmd += f" && echo '@00000000 00000000' > {fw_out}/tcdm_bank0.slm"
         return cmd

@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -77,6 +78,7 @@ def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
     cmd = (
         f"cd {proj_root} && "
         f"vcs {vlog_opts} {elab_opts} "
+        f"-Mdir={build_dir}/csrc "
         f"-f {filelist} "
         f"-top tb_top "
         f"-o {build_dir}/simv "
@@ -88,7 +90,20 @@ def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
         return build_dir
 
     print(f"[BUILD] Compiling .{build_hash} ({build_cls.name})...")
-    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    print(f"[DEBUG] cmd: {cmd}")
+    print(f"[DEBUG] LM_LICENSE_FILE={os.environ.get('LM_LICENSE_FILE', 'NOT SET')}")
+    print(f"[DEBUG] VCS_HOME={os.environ.get('VCS_HOME', 'NOT SET')}")
+    print(f"[DEBUG] DESIGNWARE_HOME={os.environ.get('DESIGNWARE_HOME', 'NOT SET')}")
+    sys.stdout.flush()
+    try:
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, universal_newlines=True,
+                                timeout=600)
+    except subprocess.TimeoutExpired:
+        print(f"[BUILD] TIMEOUT .{build_hash} ({build_cls.name})", file=sys.stderr)
+        raise RuntimeError(f"Build timed out: {build_cls.name}")
+    print(f"[DEBUG] VCS returncode={result.returncode}")
+    sys.stdout.flush()
     if result.returncode != 0:
         print(f"[BUILD] FAILED .{build_hash}:\n{result.stderr}", file=sys.stderr)
         raise RuntimeError(f"Build failed: {build_cls.name}")
@@ -151,12 +166,17 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
 
     # Build sim command
     uvm_test_arg = f"+UVM_TESTNAME={test_cls.uvm_test}" if test_cls.uvm_test else ""
+    fw_dir = os.path.join(test_dir, "fw")
+    fw_opts = ""
+    if os.path.isdir(fw_dir):
+        fw_opts = f"+FW_SLMS={fw_dir}/l2_stim.slm +FW_SLMD={fw_dir}/tcdm_bank0.slm"
     sim_cmd = (
         f"cd {test_dir} && "
-        f"DESIGNWARE_HOME=/opt/sv_pkgs/uvm/svt_2018.09 "
+        f"DESIGNWARE_HOME=/usr/Synopsys/vip_2018_09 "
         f"./simv "
         f"{sim_opt_clean} "
         f"{uvm_test_arg} "
+        f"{fw_opts} "
         f"{global_sim_opts} "
         f"{' '.join(extra_opts)} "
         f"-l simv.log"
@@ -167,12 +187,43 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
         return (test_name, "DRY-RUN", "")
 
     print(f"[SIM] [{test_name}] Running simulation...")
-    result = subprocess.run(sim_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
-    # Determine pass/fail from log
     log_path = os.path.join(test_dir, "simv.log")
+    # Remove stale log to avoid误读旧结果
+    if os.path.exists(log_path):
+        os.remove(log_path)
+
+    proc = subprocess.Popen(sim_cmd, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, universal_newlines=True)
+
+    # Poll simv.log for completion; kill process once done
+    # VCS simv may become a zombie after $finish, so we monitor the log
     status = "FAIL"
     msg = ""
+    timeout_sec = 300
+    elapsed = 0
+    while elapsed < timeout_sec:
+        ret = proc.poll()
+        if ret is not None:
+            break
+        if os.path.exists(log_path):
+            with open(log_path) as f:
+                log_content = f.read()
+            if "========== TEST PASSED ==========" in log_content or \
+               "========== TEST FAILED ==========" in log_content or \
+               "$finish" in log_content:
+                # Simulation finished, kill any lingering processes
+                proc.kill()
+                proc.wait()
+                break
+        time.sleep(1)
+        elapsed += 1
+    else:
+        # Timeout - force kill
+        proc.kill()
+        proc.wait()
+        msg = "simulation timed out"
+
+    # Determine pass/fail from log
     if os.path.exists(log_path):
         with open(log_path) as f:
             log_content = f.read()
@@ -180,7 +231,12 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
             status = "PASS"
         elif "========== TEST FAILED ==========" in log_content:
             status = "FAIL"
-            msg = "UVM reported FAIL"
+            if not msg:
+                msg = "UVM reported FAIL"
+        elif "$finish" in log_content:
+            status = "FAIL"
+            if not msg:
+                msg = "simulation ended without PASS/FAIL marker"
     else:
         msg = "simv.log not found"
 

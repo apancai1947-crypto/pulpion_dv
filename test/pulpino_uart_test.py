@@ -57,16 +57,16 @@ class tc_uart_loopback_test(uart_base_test):
     c_defines = {"BAUD_DIVISOR": 1, "PARITY": 0}
 
 
-# 循环生成
+# 循环生成（需要回环，继承 tc_uart_loopback_test）
 import sys as _sys
 for _data in ["all0", "all1", "random"]:
     _name = f"tc_uart_data_{_data}"
-    _cls = InheritableMeta(_name, (uart_base_test,), {
+    _cls = InheritableMeta(_name, (tc_uart_loopback_test,), {
         "name": _name,
-        "tag": uart_base_test.tag + ["data", _data],
+        "tag": tc_uart_loopback_test.tag + ["data", _data],
         "c_test": _name,
         "c_defines": {"BAUD_DIVISOR": 1, "PARITY": 0, "DATA_PATTERN": _data},
-        "sim_opt": uart_base_test.sim_opt + f"+UART_DATA_PATTERN={_data} ",
+        "sim_opt": tc_uart_loopback_test.sim_opt + f"+UART_DATA_PATTERN={_data} ",
     })
     _sys.modules[__name__].__dict__[_name] = _cls
 del _sys

@@ -5,6 +5,12 @@ debug/
 sim/build/
 doc/0418_conversation.md
 
+# VCS Build Output
+csrc/
+
+# Design Docs
+doc/
+
 # Tool Outputs
 *.log
 *.key
