@@ -1,8 +1,9 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "sim"))
 from case_manager import Build, Test
 from case_manager.base import InheritableMeta
-
 
 # ===== Build 层 =====
 
@@ -21,7 +22,7 @@ class uart_base_build(Build):
 class uart_loopback_build(uart_base_build):
     name = "uart_loopback"
     vlog_opt += " +define+LOOPBACK"
-    elab_opt += " -xprop=tmerge"
+    # -xprop=tmerge removed: use --xprop CLI flag when license supports it
 
 
 # ===== Test 层 =====
@@ -59,6 +60,7 @@ class tc_uart_loopback_test(uart_base_test):
 
 # 循环生成（需要回环，继承 tc_uart_loopback_test）
 import sys as _sys
+
 for _data in ["all0", "all1", "random"]:
     _name = f"tc_uart_data_{_data}"
     _cls = InheritableMeta(_name, (tc_uart_loopback_test,), {
