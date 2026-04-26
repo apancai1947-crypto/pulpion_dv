@@ -1,0 +1,2 @@
+vhdl_uart_lib : /root/work/dv-flow/pulpino_dv/debug/pulpino_uart_test_tc_uart_hello/vhdl_uart_lib
+work : /root/work/dv-flow/pulpino_dv/debug/pulpino_uart_test_tc_uart_hello/vhdl_uart_lib

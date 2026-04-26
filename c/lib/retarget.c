@@ -4,16 +4,51 @@
 
 static int uart_initialized = 0;
 
+/* ---- Register assembly macros ---- */
+
+/* LCR value without DLAB bit (DLAB managed by uart_init internally) */
+#define _UART_LCR_VAL() ( \
+    (((UART_DATA_BITS - 5) & 0x3))                          | \
+    ((UART_STOP_BITS == 2 ? 1 : 0)          << 2)           | \
+    (UART_PARITY_EN                         << 3)           | \
+    (UART_PARITY_EVEN                       << 4)           | \
+    (UART_PARITY_STICK                      << 5)           | \
+    (UART_BREAK_EN                          << 6)             \
+)
+
+/* FCR trigger level encoding: 1→00, 4→01, 8→10, 14→11 */
+#define _UART_FIFO_TRIGGER_BITS() \
+    (UART_FIFO_TRIGGER >= 14 ? 3 : UART_FIFO_TRIGGER >= 8 ? 2 : \
+     UART_FIFO_TRIGGER >= 4  ? 1 : 0)
+
+#define _UART_FCR_VAL() ( \
+    (UART_FIFO_EN                   << 0) | \
+    (UART_FIFO_RX_RESET             << 1) | \
+    (UART_FIFO_TX_RESET             << 2) | \
+    (_UART_FIFO_TRIGGER_BITS()      << 4)   \
+)
+
+/* MCR value */
+#define _UART_MCR_VAL() ( \
+    (UART_MCR_DTR       << 0) | \
+    (UART_MCR_RTS       << 1) | \
+    (UART_MCR_OUT1      << 2) | \
+    (UART_MCR_OUT2      << 3) | \
+    (UART_MCR_LOOPBACK  << 4)   \
+)
+
 static void uart_init(void) {
-    // 8N1, DLAB=1
-    *LCR_UART = 0x83;
-    // Set baud rate divisor
+    /* DLAB=1: set baud rate divisor */
+    *LCR_UART = _UART_LCR_VAL() | (1 << 7);
     *DLM_UART = (UART_DIVISOR >> 8) & 0xFF;
     *DLL_UART =  UART_DIVISOR       & 0xFF;
-    // 8N1, DLAB=0
-    *LCR_UART = 0x03;
-    // Enable and clear FIFOs
-    *FCR_UART = 0x07;
+    /* DLAB=0: frame format */
+    *LCR_UART = _UART_LCR_VAL();
+    /* FIFO control */
+    *FCR_UART = _UART_FCR_VAL();
+    /* Modem control */
+    *MCR_UART = _UART_MCR_VAL();
+
     uart_initialized = 1;
 }
 

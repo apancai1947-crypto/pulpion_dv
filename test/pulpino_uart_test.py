@@ -46,7 +46,7 @@ class tc_uart_tx_single_test(uart_base_test):
     name = "tc_uart_tx_single"
     tag += ["tx", "single"]
     c_test = "tc_uart_tx_single"
-    c_defines = {"BAUD_DIVISOR": 1, "PARITY": 0}
+    c_defines = {"UART_DIVISOR": 1, "UART_PARITY_EN": 0}
     sim_opt += "+UART_DATA_WIDTH=8"
 
 
@@ -55,7 +55,7 @@ class tc_uart_loopback_test(uart_base_test):
     tag += ["loopback"]
     build = uart_loopback_build
     c_test = "tc_uart_loopback"
-    c_defines = {"BAUD_DIVISOR": 1, "PARITY": 0}
+    c_defines = {"UART_DIVISOR": 1, "UART_PARITY_EN": 0}
 
 
 # 循环生成（需要回环，继承 tc_uart_loopback_test）
@@ -67,7 +67,7 @@ for _data in ["all0", "all1", "random"]:
         "name": _name,
         "tag": tc_uart_loopback_test.tag + ["data", _data],
         "c_test": _name,
-        "c_defines": {"BAUD_DIVISOR": 1, "PARITY": 0, "DATA_PATTERN": _data},
+        "c_defines": {"UART_DIVISOR": 1, "UART_PARITY_EN": 0, "DATA_PATTERN": _data},
         "sim_opt": tc_uart_loopback_test.sim_opt + f"+UART_DATA_PATTERN={_data} ",
     })
     _sys.modules[__name__].__dict__[_name] = _cls
