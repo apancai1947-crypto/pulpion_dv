@@ -26,7 +26,7 @@ int main(void)
     int num_tests = sizeof(test_data) / sizeof(test_data[0]);
     int pass_count = 0;
 
-    printf("TF_UART_002: Send 5 distinct bytes, verify loopback\n");
+    printf("INFO: TF_UART_002: Send 5 distinct bytes, verify loopback\n");
 
     for (int i = 0; i < num_tests; i++) {
         unsigned char tx_byte = test_data[i];
@@ -47,17 +47,17 @@ int main(void)
         rx_byte = *rbr;
 
         if (rx_byte == tx_byte) {
-            printf("  PASS: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
+            printf("INFO: PASS: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
             pass_count++;
         } else {
-            printf("  FAIL: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
+            printf("INFO: FAIL: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
         }
     }
 
     if (pass_count == num_tests) {
-        printf("PASS: All %d bytes matched\n", num_tests);
+        printf("INFO: PASS: All %d bytes matched\n", num_tests);
     } else {
-        printf("FAIL: %d/%d bytes matched\n", pass_count, num_tests);
+        printf("INFO: FAIL: %d/%d bytes matched\n", pass_count, num_tests);
     }
 
     end_of_test();

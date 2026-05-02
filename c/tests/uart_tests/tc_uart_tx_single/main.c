@@ -24,7 +24,7 @@ int main(void)
     unsigned char tx_byte = 0xA5;
     unsigned char rx_byte;
 
-    printf("TF_UART_001: Single TX byte 0xA5 loopback\n");
+    printf("INFO: TF_UART_001: Single TX byte 0xA5 loopback\n");
 
     /* Wait for TX hold register empty */
     while (!(*lsr & LSR_THRE))
@@ -41,9 +41,9 @@ int main(void)
     rx_byte = *rbr;
 
     if (rx_byte == tx_byte) {
-        printf("PASS: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
+        printf("INFO: PASS: TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
     } else {
-        printf("FAIL: TX 0x%02X, RX 0x%02X (expected 0x%02X)\n",
+        printf("INFO: FAIL: TX 0x%02X, RX 0x%02X (expected 0x%02X)\n",
                tx_byte, rx_byte, tx_byte);
     }
 

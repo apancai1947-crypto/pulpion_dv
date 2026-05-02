@@ -31,11 +31,11 @@ int main(void)
     unsigned char rx_byte;
     int pass;
 
-    printf("TF_UART_052: Internal loopback mode\n");
+    printf("INFO: TF_UART_052: Internal loopback mode\n");
 
     /* Enable internal loopback */
     *mcr = MCR_LOOP;
-    printf("  MCR = 0x%02X (loopback enabled)\n", *mcr);
+    printf("INFO: MCR = 0x%02X (loopback enabled)\n", *mcr);
 
     /* Wait for TX empty */
     while (!(*lsr & LSR_THRE))
@@ -50,7 +50,7 @@ int main(void)
         ;
 
     if (!timeout) {
-        printf("  FAIL: RX data not ready (timeout)\n");
+        printf("INFO: FAIL: RX data not ready (timeout)\n");
         pass = 0;
         goto cleanup;
     }
@@ -60,20 +60,20 @@ int main(void)
 
     pass = (rx_byte == tx_byte);
     if (pass) {
-        printf("  PASS: Loopback TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
+        printf("INFO: PASS: Loopback TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
     } else {
-        printf("  FAIL: Loopback TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
+        printf("INFO: FAIL: Loopback TX 0x%02X, RX 0x%02X\n", tx_byte, rx_byte);
     }
 
 cleanup:
     /* Disable loopback */
     *mcr = 0x00;
-    printf("  MCR = 0x%02X (loopback disabled)\n", *mcr);
+    printf("INFO: MCR = 0x%02X (loopback disabled)\n", *mcr);
 
     if (pass) {
-        printf("PASS: Internal loopback test passed\n");
+        printf("INFO: PASS: Internal loopback test passed\n");
     } else {
-        printf("FAIL: Internal loopback test failed\n");
+        printf("INFO: FAIL: Internal loopback test failed\n");
     }
 
     end_of_test();
