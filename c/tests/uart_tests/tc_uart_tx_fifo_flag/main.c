@@ -27,14 +27,14 @@ int main(void)
     unsigned char lsr_val;
     int pass = 1;
 
-    printf("TF_UART_020: TX FIFO THRE flag verification\n");
+    printf("INFO: TF_UART_020: TX FIFO THRE flag verification\n");
 
     /* Step 1: Check THRE is set after init */
     lsr_val = *lsr;
     if (lsr_val & LSR_THRE) {
-        printf("  THRE set after init (LSR=0x%02X) — PASS\n", lsr_val);
+        printf("INFO:   THRE set after init (LSR=0x%02X) — PASS\n", lsr_val);
     } else {
-        printf("  THRE NOT set after init (LSR=0x%02X) — FAIL\n", lsr_val);
+        printf("INFO:   THRE NOT set after init (LSR=0x%02X) — FAIL\n", lsr_val);
         pass = 0;
     }
 
@@ -47,14 +47,14 @@ int main(void)
         ;
 
     if (!timeout) {
-        printf("  FAIL: THRE not set after TX (timeout)\n");
+        printf("INFO:   FAIL: THRE not set after TX (timeout)\n");
         pass = 0;
     } else {
         lsr_val = *lsr;
         if (lsr_val & LSR_THRE) {
-            printf("  THRE set after TX (LSR=0x%02X) — PASS\n", lsr_val);
+            printf("INFO:   THRE set after TX (LSR=0x%02X) — PASS\n", lsr_val);
         } else {
-            printf("  THRE NOT set after TX (LSR=0x%02X) — FAIL\n", lsr_val);
+            printf("INFO:   THRE NOT set after TX (LSR=0x%02X) — FAIL\n", lsr_val);
             pass = 0;
         }
     }
@@ -68,9 +68,9 @@ int main(void)
     }
 
     if (pass) {
-        printf("PASS: TX FIFO THRE flag behaves correctly\n");
+        printf("INFO: PASS: TX FIFO THRE flag behaves correctly\n");
     } else {
-        printf("FAIL: TX FIFO THRE flag issues detected\n");
+        printf("INFO: FAIL: TX FIFO THRE flag issues detected\n");
     }
 
     end_of_test();

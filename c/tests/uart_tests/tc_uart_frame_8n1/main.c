@@ -29,12 +29,12 @@ int main(void)
     unsigned char lcr_val;
     int lcr_pass;
 
-    printf("TF_UART_010: Verify 8N1 frame format (LCR=0x03)\n");
+    printf("INFO: TF_UART_010: Verify 8N1 frame format (LCR=0x03)\n");
 
     /* Check LCR value */
     lcr_val = *lcr;
     lcr_pass = (lcr_val == 0x03);
-    printf("  LCR = 0x%02X (expected 0x03) — %s\n",
+    printf("INFO:   LCR = 0x%02X (expected 0x03) — %s\n",
            lcr_val, lcr_pass ? "PASS" : "FAIL");
 
     /* Wait for TX empty */
@@ -52,10 +52,10 @@ int main(void)
     rx_byte = *rbr;
 
     if (rx_byte == tx_byte && lcr_pass) {
-        printf("PASS: 8N1 frame verified, loopback TX 0x%02X RX 0x%02X\n",
+        printf("INFO: PASS: 8N1 frame verified, loopback TX 0x%02X RX 0x%02X\n",
                tx_byte, rx_byte);
     } else {
-        printf("FAIL: lcr_pass=%d, loopback %s\n",
+        printf("INFO: FAIL: lcr_pass=%d, loopback %s\n",
                lcr_pass, (rx_byte == tx_byte) ? "OK" : "MISMATCH");
     }
 

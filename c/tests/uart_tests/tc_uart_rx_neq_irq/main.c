@@ -34,11 +34,11 @@ int main(void)
     unsigned char iir_val;
     int pass = 1;
 
-    printf("TF_UART_021: RX data available interrupt check\n");
+    printf("INFO: TF_UART_021: RX data available interrupt check\n");
 
     /* Enable RX data available interrupt (ERBFI) */
     *ier = IER_ERBFI;
-    printf("  IER set to 0x%02X\n", *ier);
+    printf("INFO:   IER set to 0x%02X\n", *ier);
 
     /* Wait for TX empty */
     while (!(*lsr & LSR_THRE))
@@ -53,19 +53,19 @@ int main(void)
         ;
 
     if (!timeout) {
-        printf("  FAIL: RX data not ready (timeout)\n");
+        printf("INFO:   FAIL: RX data not ready (timeout)\n");
         pass = 0;
         goto cleanup;
     }
 
     /* Read IIR — check for RX data available interrupt */
     iir_val = *iir;
-    printf("  IIR = 0x%02X\n", iir_val);
+    printf("INFO:   IIR = 0x%02X\n", iir_val);
 
     if ((iir_val & 0x0F) == IIR_RX_AVAIL) {
-        printf("  RX data available interrupt detected — PASS\n");
+        printf("INFO:   RX data available interrupt detected — PASS\n");
     } else {
-        printf("  IIR[3:0] = 0x%02X (expected 0x%02X) — FAIL\n",
+        printf("INFO:   IIR[3:0] = 0x%02X (expected 0x%02X) — FAIL\n",
                iir_val & 0x0F, IIR_RX_AVAIL);
         pass = 0;
     }
@@ -76,12 +76,12 @@ int main(void)
 cleanup:
     /* Disable interrupt */
     *ier = 0x00;
-    printf("  IER cleared to 0x%02X\n", *ier);
+    printf("INFO:   IER cleared to 0x%02X\n", *ier);
 
     if (pass) {
-        printf("PASS: RX interrupt verification passed\n");
+        printf("INFO: PASS: RX interrupt verification passed\n");
     } else {
-        printf("FAIL: RX interrupt verification failed\n");
+        printf("INFO: FAIL: RX interrupt verification failed\n");
     }
 
     end_of_test();

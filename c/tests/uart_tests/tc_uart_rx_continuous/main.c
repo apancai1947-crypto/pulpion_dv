@@ -27,7 +27,7 @@ int main(void)
     volatile unsigned char *fcr = (volatile unsigned char *)UART_REG_FCR;
     int pass_count = 0;
 
-    printf("TF_UART_004: Clear FIFOs, send 32 bytes (0x01..0x20), verify loopback\n");
+    printf("INFO: TF_UART_004: Clear FIFOs, send 32 bytes (0x01..0x20), verify loopback\n");
 
     /* Clear both TX and RX FIFOs */
     *fcr = 0x07;
@@ -53,15 +53,15 @@ int main(void)
         if (rx_byte == tx_byte) {
             pass_count++;
         } else {
-            printf("  FAIL at byte %d: TX 0x%02X, RX 0x%02X\n",
+            printf("INFO:   FAIL at byte %d: TX 0x%02X, RX 0x%02X\n",
                    i, tx_byte, rx_byte);
         }
     }
 
     if (pass_count == NUM_BYTES) {
-        printf("PASS: All %d bytes matched after FIFO clear\n", NUM_BYTES);
+        printf("INFO: PASS: All %d bytes matched after FIFO clear\n", NUM_BYTES);
     } else {
-        printf("FAIL: %d/%d bytes matched\n", pass_count, NUM_BYTES);
+        printf("INFO: FAIL: %d/%d bytes matched\n", pass_count, NUM_BYTES);
     }
 
     end_of_test();

@@ -34,7 +34,7 @@ int main(void)
     unsigned char lfsr = 0xCE;  /* Non-zero seed */
     int pass_count = 0;
 
-    printf("TF_UART_013: Send 16 pseudo-random bytes (LFSR), verify loopback\n");
+    printf("INFO: TF_UART_013: Send 16 pseudo-random bytes (LFSR), verify loopback\n");
 
     for (int i = 0; i < NUM_RANDOM_BYTES; i++) {
         lfsr = lfsr_step(lfsr);
@@ -63,15 +63,15 @@ int main(void)
         if (rx_byte == tx_byte) {
             pass_count++;
         } else {
-            printf("  FAIL at byte %d: TX 0x%02X, RX 0x%02X\n",
+            printf("INFO:   FAIL at byte %d: TX 0x%02X, RX 0x%02X\n",
                    i, tx_byte, rx_byte);
         }
     }
 
     if (pass_count == NUM_RANDOM_BYTES) {
-        printf("PASS: All %d pseudo-random bytes matched\n", NUM_RANDOM_BYTES);
+        printf("INFO: PASS: All %d pseudo-random bytes matched\n", NUM_RANDOM_BYTES);
     } else {
-        printf("FAIL: %d/%d pseudo-random bytes matched\n",
+        printf("INFO: FAIL: %d/%d pseudo-random bytes matched\n",
                pass_count, NUM_RANDOM_BYTES);
     }
 
