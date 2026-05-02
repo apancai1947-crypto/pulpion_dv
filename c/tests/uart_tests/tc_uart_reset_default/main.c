@@ -12,7 +12,7 @@
 extern int printf(const char *fmt, ...);
 extern void end_of_test(void);
 
-#define UART_REG_LSR ((unsigned char *)0x1A100004)
+#define UART_REG_LSR ((unsigned char *)0x1A100014)
 #define UART_REG_LCR ((unsigned char *)0x1A10000C)
 #define UART_REG_MCR ((unsigned char *)0x1A100010)
 

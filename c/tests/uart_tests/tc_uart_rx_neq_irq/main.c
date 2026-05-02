@@ -13,8 +13,8 @@ extern void end_of_test(void);
 
 #define UART_REG_THR ((unsigned char *)0x1A100000)
 #define UART_REG_RBR ((unsigned char *)0x1A100000)
-#define UART_REG_LSR ((unsigned char *)0x1A100004)
-#define UART_REG_IER ((unsigned char *)0x1A100004)
+#define UART_REG_LSR ((unsigned char *)0x1A100014)
+#define UART_REG_IER ((unsigned char *)0x1A100014)
 #define UART_REG_IIR ((unsigned char *)0x1A100008)
 
 #define LSR_THRE (1 << 5)
@@ -26,6 +26,7 @@ extern void end_of_test(void);
 
 int main(void)
 {
+  uart_init();
     volatile unsigned char *thr = (volatile unsigned char *)UART_REG_THR;
     volatile unsigned char *rbr = (volatile unsigned char *)UART_REG_RBR;
     volatile unsigned char *lsr = (volatile unsigned char *)UART_REG_LSR;

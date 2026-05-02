@@ -57,15 +57,16 @@ C_INCLUDES = -I$(INC_DIR) -I$(PULP_INC)
 STARTUP  = $(PRJ_ROOT)/sys/startup.S
 RETARGET = $(PRJ_ROOT)/lib/retarget.c
 IRQ      = $(PRJ_ROOT)/lib/irq.c
+UART     = $(PRJ_ROOT)/lib/uart.c
 LINK_LD  = $(PRJ_ROOT)/sys/link.ld
 
 # 测试用例主程序源文件
 TEST_DIR = $(PRJ_ROOT)/tests/uart_tests/$(CTEST)
 TEST_SRC = $(TEST_DIR)/main.c
 
-# 完整源文件列表：启动代码 + 测试主程序 + retarget 库
+# 完整源文件列表：启动代码 + 测试主程序 + 库文件
 # 链接顺序影响不大（-T 使用链接脚本控制布局），但启动代码必须包含
-SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ)
+SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ) $(UART)
 
 # ---------------------------------------------------------------------------
 # 编译选项

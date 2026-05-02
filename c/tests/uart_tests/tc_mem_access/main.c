@@ -1,7 +1,9 @@
+#include "uart.h"
 extern int printf(const char *fmt, ...);
 extern void end_of_test(void);
 
 int main() {
+  uart_init();
     volatile unsigned int *data = (volatile unsigned int *)0x00100000;
 
     printf("UVM_INFO: [FW] Running tc_mem_access...\n");
