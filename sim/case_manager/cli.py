@@ -37,6 +37,8 @@ def parse_args(argv=None):
                         help="Enable debug mode (VCS -debug_access+all)")
     parser.add_argument("--xprop", action="store_true",
                         help="Enable X-propagation")
+    parser.add_argument("-d", "--dump", action="store_true",
+                        help="Dump waveform (FSDB)")
 
     # Post actions
     parser.add_argument("--delete_passed_files", action="store_true",

@@ -57,19 +57,30 @@ class Test(metaclass=InheritableMeta):
         Otherwise, auto-generate from c_test and c_defines.
         """
         if cls.prerun_script:
-            return cls.prerun_script.replace("{name}", cls.name).replace("{out_dir}", out_dir)
-
-        if not cls.c_test:
+            cmd = cls.prerun_script.replace("{name}", cls.name).replace("{out_dir}", out_dir)
+        elif not cls.c_test:
             return ""
+        else:
+            fw_out = f"{out_dir}/{cls.name}/fw"
+            proj_root = os.path.normpath(os.path.join(out_dir, ".."))
+            c_dir = os.path.join(proj_root, "c")
+            cmd = f"make -C {c_dir} CTEST={cls.c_test} OUT={fw_out} all"
+            if cls.c_defines:
+                defines = " ".join(f"-D{k}={v}" for k, v in cls.c_defines.items())
+                cmd += f' EXTRA_CFLAGS="{defines}"'
+            # Copy firmware.slm to l2_stim.slm and create dummy tcdm_bank0.slm
+            cmd += f" && cp {fw_out}/firmware.slm {fw_out}/l2_stim.slm"
+            cmd += f" && echo '@00000000 00000000' > {fw_out}/tcdm_bank0.slm"
 
+        # Record command and its output to build.log in the firmware output directory
         fw_out = f"{out_dir}/{cls.name}/fw"
-        proj_root = os.path.normpath(os.path.join(out_dir, ".."))
-        c_dir = os.path.join(proj_root, "c")
-        cmd = f"make -C {c_dir} CTEST={cls.c_test} OUT={fw_out} all"
-        if cls.c_defines:
-            defines = " ".join(f"-D{k}={v}" for k, v in cls.c_defines.items())
-            cmd += f' EXTRA_CFLAGS="{defines}"'
-        # Copy firmware.slm to l2_stim.slm and create dummy tcdm_bank0.slm
-        cmd += f" && cp {fw_out}/firmware.slm {fw_out}/l2_stim.slm"
-        cmd += f" && echo '@00000000 00000000' > {fw_out}/tcdm_bank0.slm"
-        return cmd
+        log_file = f"{fw_out}/build.log"
+        # Escape single quotes in cmd for safe echoing in shell
+        escaped_cmd = cmd.replace("'", "'\\''")
+        # Wrap the command to:
+        # 1. Print the command itself to the first line of the log
+        # 2. Redirect all output to the log file
+        # 3. On failure, echo the log to stderr so runner.py can report it
+        return f"mkdir -p {fw_out} && (echo 'Command: {escaped_cmd}' && {cmd}) > {log_file} 2>&1 || (cat {log_file} && exit 1)"
+
+

@@ -63,7 +63,9 @@ class pulpino_uart_test extends base_test;
 
         forever begin
             // Block until VIP monitor observes a TX transaction (via FIFO bridge)
+            `uvm_info(get_type_name(), $sformatf("UART Test: waiting for TX transaction at time %0t", $time), UVM_LOW)
             tx_xact_fifo.get(tx);
+            `uvm_info(get_type_name(), $sformatf("UART Test: received TX transaction at time %0t", $time), UVM_LOW)
 
             // Extract received byte and drive back via sequence
             rx_seq = uart_dce_rx_sequence::type_id::create("rx_seq");

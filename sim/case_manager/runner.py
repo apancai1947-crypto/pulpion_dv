@@ -50,11 +50,13 @@ def get_global_opts(args):
         vlog_opts.append("-debug_access+all -kdb -lca")
     if args.xprop:
         vlog_opts.append("-xprop=tmerge")
+    if args.dump:
+        vlog_opts.append("-debug_access+all -kdb -lca -fsdb +define+FSDB_DUMP")
 
     return " ".join(vlog_opts), " ".join(sim_opts)
 
 
-def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
+def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False, dump=False):
     """Compile a Build, return path to simv directory."""
     build_hash = compute_build_hash(build_cls, global_vlog_opts)
     build_dir = os.path.join(out_dir, f".{build_hash}")
@@ -75,8 +77,12 @@ def compile_build(build_cls, out_dir, global_vlog_opts, dry_run=False):
     sim_dir = os.path.join(proj_root, "sim")
     filelist = os.path.join(sim_dir, "filelist.f")
 
+    env_prefix = ""
+    if dump:
+        env_prefix = "VERDI_HOME=/usr/synopsys/vc_static-O-2018.09-SP2-2/verdi "
     cmd = (
         f"cd {proj_root} && "
+        f"{env_prefix}"
         f"vcs {vlog_opts} {elab_opts} "
         f"-Mdir={build_dir}/csrc "
         f"-f {filelist} "
@@ -125,7 +131,7 @@ def validate_sim_opt(sim_opt):
 
 
 def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
-             dry_run=False, delete_passed=False):
+             dry_run=False, delete_passed=False, dump=False):
     """Run a single test case.
 
     Returns: (test_name, "PASS"|"FAIL", message)
@@ -170,6 +176,9 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
     fw_opts = ""
     if os.path.isdir(fw_dir):
         fw_opts = f"+FW_SLMS={fw_dir}/l2_stim.slm +FW_SLMD={fw_dir}/tcdm_bank0.slm"
+    dump_opts = ""
+    if dump:
+        dump_opts = f"+DUMP_WAVE +FSDB_FILE={test_dir}/novas.fsdb"
     sim_cmd = (
         f"cd {test_dir} && "
         f"DESIGNWARE_HOME=/usr/Synopsys/vip_2018_09 "
@@ -178,6 +187,7 @@ def run_test(test_cls, build_dir, out_dir, global_sim_opts, extra_opts,
         f"{uvm_test_arg} "
         f"{fw_opts} "
         f"{global_sim_opts} "
+        f"{dump_opts} "
         f"{' '.join(extra_opts)} "
         f"-l simv.log"
     )
@@ -272,7 +282,7 @@ def run_all(tests_to_run, out_dir, args, extra_opts):
             continue
         if build_cls not in build_cache:
             build_dir = compile_build(build_cls, out_dir, global_vlog_opts,
-                                      dry_run=args.dry_run)
+                                      dry_run=args.dry_run, dump=args.dump)
             build_cache[build_cls] = build_dir
 
     # Run tests
@@ -282,7 +292,7 @@ def run_all(tests_to_run, out_dir, args, extra_opts):
             build_dir = build_cache.get(test_cls.build)
             if build_dir:
                 r = run_test(test_cls, build_dir, out_dir, global_sim_opts,
-                             extra_opts, dry_run=True)
+                             extra_opts, dry_run=True, dump=args.dump)
                 results.append(r)
     else:
         with ThreadPoolExecutor(max_workers=args.j) as executor:
@@ -294,7 +304,8 @@ def run_all(tests_to_run, out_dir, args, extra_opts):
                 future = executor.submit(
                     run_test, test_cls, build_dir, out_dir,
                     global_sim_opts, extra_opts,
-                    dry_run=False, delete_passed=args.delete_passed_files
+                    dry_run=False, delete_passed=args.delete_passed_files,
+                    dump=args.dump
                 )
                 futures[future] = test_cls.name
 

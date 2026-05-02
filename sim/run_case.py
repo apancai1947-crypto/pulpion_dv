@@ -22,6 +22,7 @@ def resolve_test_spec(all_tests, spec):
         _file_part, class_chain = spec.split(":", 1)
         test_name = class_chain.rsplit(".", 1)[-1]
     else:
+        class_chain = spec
         test_name = spec
 
     if test_name in all_tests:
