@@ -62,4 +62,18 @@
 // End-of-test character
 #define EOT 0x04
 
+// ---- Memory-Mapped Stdout and Event Registers ----
+// Stdout register: C firmware writes 32-bit packed characters here
+#define STDOUT_ADDR           0x1A118000
+#define STDOUT_REG            (*(volatile unsigned int *)STDOUT_ADDR)
+
+// TB->C Event status register: C firmware polls this for events
+#define EVENT_TB2C_STATUS_ADDR 0x1A118004
+#define EVENT_TB2C_STATUS_REG (*(volatile unsigned int *)EVENT_TB2C_STATUS_ADDR)
+
+// TB->C Event codes
+#define EVENT_WAIT      1
+#define EVENT_CONTINUE  2
+#define EVENT_STOP      3
+
 #endif
