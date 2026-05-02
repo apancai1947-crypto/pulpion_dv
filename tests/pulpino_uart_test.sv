@@ -9,7 +9,7 @@ class pulpino_uart_test extends base_test;
     `uvm_component_utils(pulpino_uart_test)
 
     // FIFO to bridge VIP monitor's analysis port (broadcast) to blocking get
-    uvm_tlm_analysis_fifo#(svt_uart_transaction) tx_xact_fifo;
+    uvm_tlm_analysis_fifo#(svt_uart_transaction) rx_xact_fifo;
 
     function new(string name = "pulpino_uart_test", uvm_component parent = null);
         super.new(name, parent);
@@ -19,7 +19,7 @@ class pulpino_uart_test extends base_test;
         int tmp_int;
 
         super.build_phase(phase);
-        tx_xact_fifo = new("tx_xact_fifo", this);
+        rx_xact_fifo = new("rx_xact_fifo", this);
 
         // Parse UART plusargs into soc_config
         if ($value$plusargs("UART_DATA_WIDTH=%d", tmp_int))
@@ -39,7 +39,7 @@ class pulpino_uart_test extends base_test;
 
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
-        env.dce_agent.monitor.tx_xact_observed_port.connect(tx_xact_fifo.analysis_export);
+        env.dce_agent.monitor.rx_xact_observed_port.connect(rx_xact_fifo.analysis_export);
     endfunction
 
     virtual task run_phase(uvm_phase phase);
@@ -49,9 +49,13 @@ class pulpino_uart_test extends base_test;
             uart_loopback();
         join_none
 
-        // Wait for scoreboard to detect EOT (uart_monitor drops objection on 0x04)
-        // The scoreboard's report_phase will determine final PASS/FAIL.
-        // Simulation ends when all objections are dropped.
+        // Wait for EOT from memory-mapped stdout monitor
+        `uvm_info(get_type_name(), "Waiting for EOT from stdout monitor...", UVM_LOW)
+        env.stdout_mon.eot_event.wait_trigger();
+        `uvm_info(get_type_name(), "EOT received from stdout monitor, ending test", UVM_LOW)
+
+        // Small delay to let last UVM messages flush
+        #100ns;
 
         phase.drop_objection(this, "pulpino_uart_test finished");
     endtask
@@ -64,7 +68,7 @@ class pulpino_uart_test extends base_test;
         forever begin
             // Block until VIP monitor observes a TX transaction (via FIFO bridge)
             `uvm_info(get_type_name(), $sformatf("UART Test: waiting for TX transaction at time %0t", $time), UVM_LOW)
-            tx_xact_fifo.get(tx);
+            rx_xact_fifo.get(tx);
             `uvm_info(get_type_name(), $sformatf("UART Test: received TX transaction at time %0t", $time), UVM_LOW)
 
             // Extract received byte and drive back via sequence

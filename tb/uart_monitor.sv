@@ -41,7 +41,6 @@ class uart_monitor extends uvm_component;
         logic [7:0] rx_byte;
 
         `uvm_info(get_type_name(), "UART TX Monitor started, waiting for start bit...", UVM_LOW)
-        phase.raise_objection(this, "UART monitor waiting for data");
 
         forever begin
             // Wait for start bit (falling edge on uart_tx)
@@ -68,13 +67,6 @@ class uart_monitor extends uvm_component;
                 (rx_byte >= 32 && rx_byte < 127) ? string'(rx_byte) : "?"), UVM_HIGH)
 
             analysis_port.write(rx_byte);
-
-            // Check for EOT
-            if (rx_byte == 8'h04) begin
-                `uvm_info(get_type_name(), "EOT received, dropping objection", UVM_LOW)
-                phase.drop_objection(this, "UART received EOT");
-                break;
-            end
         end
     endtask
 

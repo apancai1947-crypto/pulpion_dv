@@ -297,20 +297,6 @@ module tb_top;
         // Enable fetch to start CPU execution
         fetch_enable = 1'b1;
         $display("[TB] fetch_enable asserted. CPU starting...");
-
-        // Debug: monitor core signals for a few cycles
-        /*
-        repeat(200) begin
-            @(posedge clk);
-            $display("[DBG] PC=0x%08h req=%b gnt=%b rvalid=%b fetch_en=%b busy=%b",
-                dut.core_region_i.CORE.RISCV_CORE.instr_addr_o,
-                dut.core_region_i.CORE.RISCV_CORE.instr_req_o,
-                dut.core_region_i.CORE.RISCV_CORE.instr_gnt_i,
-                dut.core_region_i.CORE.RISCV_CORE.instr_rvalid_i,
-                dut.core_region_i.CORE.RISCV_CORE.fetch_enable_i,
-                dut.core_region_i.CORE.RISCV_CORE.core_busy_o);
-        end
-        */
     end
 
     // ============================================

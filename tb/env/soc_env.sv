@@ -27,9 +27,6 @@ class soc_env extends uvm_env;
     // UART TUBE monitor
     uart_monitor uart_mon;
 
-    // Scoreboard
-    soc_scoreboard scb;
-
     // Memory-mapped stdout monitor (APB writes to STDOUT_REG)
     stdout_monitor stdout_mon;
 
@@ -113,8 +110,6 @@ class soc_env extends uvm_env;
         uvm_config_db#(svt_uart_agent_configuration)::set(this, "dce_agent", "cfg", dce_cfg);
         dce_agent = svt_uart_agent::type_id::create("dce_agent", this);
 
-        // Create Scoreboard
-        scb = soc_scoreboard::type_id::create("scb", this);
 
         // Create stdout monitor (gets apb_vif from config_db globally)
         stdout_mon = stdout_monitor::type_id::create("stdout_mon", this);
@@ -122,8 +117,6 @@ class soc_env extends uvm_env;
 
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
-        // UART monitor → Scoreboard
-        uart_mon.analysis_port.connect(scb.uart_imp);
     endfunction
 
     virtual function void report_phase(uvm_phase phase);

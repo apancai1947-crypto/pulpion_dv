@@ -14,7 +14,13 @@
       "Bash(git clone:*)",
       "Bash(pip install:*)",
       "mcp__MCP_DOCKER__mcp-find",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cmd //c \"windows_docker_bridge_ci.bat tc_uart_hello_test --dry-run\")",
+      "Bash(cmd //c windows_docker_bridge_ci.bat tc_uart_hello_test --dry-run)",
+      "Bash(cmd:*)",
+      "Bash(make CTEST=tc_uart_hello OUT=./build/tc_uart_hello all)",
+      "Bash(ls:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

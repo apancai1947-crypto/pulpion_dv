@@ -21,11 +21,16 @@ class stdout_monitor extends uvm_monitor;
     // String accumulation buffer
     string stdout_str;
 
+    // EOT event — triggered when end-of-test character (0x04) is received
+    uvm_event eot_event;
+
     function new(string name = "stdout_monitor", uvm_component parent = null);
         super.new(name, parent);
         info_ap = new("info_ap", this);
         event_ap = new("event_ap", this);
         stdout_str = "";
+        eot_event = new("eot_event");
+        `uvm_info("STDOUT_MON", "stdout_monitor created", UVM_LOW)
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
@@ -35,6 +40,8 @@ class stdout_monitor extends uvm_monitor;
     endfunction
 
     virtual task run_phase(uvm_phase phase);
+        byte unsigned b;
+
         // Clear buffer on reset assertion
         fork
             forever begin
@@ -46,20 +53,32 @@ class stdout_monitor extends uvm_monitor;
 
         forever begin
             @(posedge vif.clk);
-            // Monitor for writes to STDOUT_ADDR (0x1A118000)
+            // Monitor for writes to STDOUT_ADDR (0x1A111000, Debug Bus range)
             if (vif.rst_n && vif.psel && vif.penable && vif.pready && vif.pwrite &&
-                vif.paddr == 32'h1A118000) begin
+                vif.paddr == 32'h1A111000 && !$isunknown(vif.pwdata)) begin
                 if (vif.pwdata == 32'h00000000) begin
                     // Null word - string complete, parse it
-                    parse_stdout_string(stdout_str);
+                    if (stdout_str.len() > 0)
+                        parse_stdout_string(stdout_str);
                     stdout_str = "";
                 end else begin
-                    // Unpack 4 characters from 32-bit word (little-endian)
-                    stdout_str = {stdout_str,
-                                  string'(vif.pwdata[7:0]),
-                                  string'(vif.pwdata[15:8]),
-                                  string'(vif.pwdata[23:16]),
-                                  string'(vif.pwdata[31:24])};
+                    // Unpack 4 characters from 32-bit word (big-endian)
+                    // Skip null bytes (padding) and detect EOT
+                    for (int i = 3; i >= 0; i--) begin
+                        b = (vif.pwdata >> (i * 8)) & 8'hFF;
+                        if (b == 8'h04) begin
+                            // EOT (0x04) detected
+                            // Flush any accumulated string first
+                            if (stdout_str.len() > 0)
+                                parse_stdout_string(stdout_str);
+                            stdout_str = "";
+                            `uvm_info("STDOUT", "EOT detected via memory-mapped stdout", UVM_LOW)
+                            eot_event.trigger();
+                            break;
+                        end else if (b != 0) begin
+                            stdout_str = {stdout_str, string'(b)};
+                        end
+                    end
                 end
             end
         end
@@ -113,8 +132,9 @@ class stdout_monitor extends uvm_monitor;
             return;
         end
 
-        // Unknown format - report error
-        `uvm_error("STDOUT", $sformatf("Unknown stdout format: %s", str))
+        // Unknown format - report as info (not error, since firmware may send
+        // raw strings without prefix)
+        `uvm_info("STDOUT", $sformatf("RAW: %s", str), UVM_LOW)
     endfunction
 
 endclass

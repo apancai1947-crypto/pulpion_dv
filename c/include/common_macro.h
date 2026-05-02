@@ -63,12 +63,13 @@
 #define EOT 0x04
 
 // ---- Memory-Mapped Stdout and Event Registers ----
-// Stdout register: C firmware writes 32-bit packed characters here
-#define STDOUT_ADDR           0x1A118000
+// Located in Debug Bus address range (0x1A11_0200-0x1A11_1FFF), unused by debug unit.
+// Debug unit silently accepts writes to unrecognized addresses (no side effects).
+#define STDOUT_ADDR           0x1A111000
 #define STDOUT_REG            (*(volatile unsigned int *)STDOUT_ADDR)
 
 // TB->C Event status register: C firmware polls this for events
-#define EVENT_TB2C_STATUS_ADDR 0x1A118004
+#define EVENT_TB2C_STATUS_ADDR 0x1A111004
 #define EVENT_TB2C_STATUS_REG (*(volatile unsigned int *)EVENT_TB2C_STATUS_ADDR)
 
 // TB->C Event codes

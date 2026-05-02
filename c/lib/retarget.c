@@ -7,8 +7,12 @@ static int stdout_index = 0;
 static unsigned int stdout_word = 0;
 
 static void stdout_putc(char c) {
-    // Pack character into current word (little-endian)
-    stdout_word |= ((unsigned int)(unsigned char)c) << (stdout_index * 8);
+    // Pack character into current word (big-endian for better waveform visualization)
+    unsigned int shift = (3 - stdout_index) * 8;
+    if (stdout_index == 0)
+        stdout_word = ((unsigned int)(unsigned char)c) << shift;
+    else
+        stdout_word |= ((unsigned int)(unsigned char)c) << shift;
     stdout_index++;
 
     // When 4 characters are packed, write the word
