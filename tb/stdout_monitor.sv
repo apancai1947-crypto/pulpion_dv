@@ -20,14 +20,12 @@ class stdout_monitor extends uvm_monitor;
 
     // String accumulation buffer
     string stdout_str;
-    int stdout_index;
 
     function new(string name = "stdout_monitor", uvm_component parent = null);
         super.new(name, parent);
         info_ap = new("info_ap", this);
         event_ap = new("event_ap", this);
         stdout_str = "";
-        stdout_index = 0;
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
@@ -37,16 +35,24 @@ class stdout_monitor extends uvm_monitor;
     endfunction
 
     virtual task run_phase(uvm_phase phase);
+        // Clear buffer on reset deassertion
+        fork
+            forever begin
+                @(negedge vif.rst_n);
+                stdout_str = "";
+                `uvm_info("STDOUT_MON", "Reset detected, clearing stdout buffer", UVM_HIGH)
+            end
+        join_none
+
         forever begin
             @(posedge vif.clk);
             // Monitor for writes to STDOUT_ADDR (0x1A118000)
-            if (vif.psel && vif.penable && vif.pwrite &&
+            if (vif.rst_n && vif.psel && vif.penable && vif.pready && vif.pwrite &&
                 vif.paddr == 32'h1A118000) begin
                 if (vif.pwdata == 32'h00000000) begin
                     // Null word - string complete, parse it
                     parse_stdout_string(stdout_str);
                     stdout_str = "";
-                    stdout_index = 0;
                 end else begin
                     // Unpack 4 characters from 32-bit word (little-endian)
                     stdout_str = {stdout_str,
@@ -54,7 +60,6 @@ class stdout_monitor extends uvm_monitor;
                                   string'(vif.pwdata[15:8]),
                                   string'(vif.pwdata[23:16]),
                                   string'(vif.pwdata[31:24])};
-                    stdout_index += 4;
                 end
             end
         end
@@ -66,10 +71,16 @@ class stdout_monitor extends uvm_monitor;
         string content;
         uvm_event event_h;
 
+        // Skip empty strings (e.g. consecutive null words)
+        if (str.len() == 0) return;
+
         // Check for "EVENT:" prefix
         found = str.find("EVENT:");
         if (found == 0) begin
-            content = str.substr(6, str.len() - 1);
+            if (str.len() > 6)
+                content = str.substr(6, str.len() - 1);
+            else
+                content = "";
             `uvm_info("STDOUT", $sformatf("EVENT triggered: %s", content), UVM_LOW)
 
             // Get UVM event from event pool and trigger it
@@ -84,7 +95,10 @@ class stdout_monitor extends uvm_monitor;
         // Check for "INFO:" prefix
         found = str.find("INFO:");
         if (found == 0) begin
-            content = str.substr(5, str.len() - 1);
+            if (str.len() > 5)
+                content = str.substr(5, str.len() - 1);
+            else
+                content = "";
             `uvm_info("STDOUT", $sformatf("INFO: %s", content), UVM_LOW)
 
             // Write to analysis port
