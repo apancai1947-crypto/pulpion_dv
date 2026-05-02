@@ -30,6 +30,9 @@ class soc_env extends uvm_env;
     // Scoreboard
     soc_scoreboard scb;
 
+    // Memory-mapped stdout monitor (APB writes to STDOUT_REG)
+    stdout_monitor stdout_mon;
+
     // UART VIP DCE agent (Synopsys SVT)
     svt_uart_agent               dce_agent;
     svt_uart_agent_configuration dce_cfg;
@@ -112,6 +115,9 @@ class soc_env extends uvm_env;
 
         // Create Scoreboard
         scb = soc_scoreboard::type_id::create("scb", this);
+
+        // Create stdout monitor (gets apb_vif from config_db globally)
+        stdout_mon = stdout_monitor::type_id::create("stdout_mon", this);
     endfunction
 
     virtual function void connect_phase(uvm_phase phase);

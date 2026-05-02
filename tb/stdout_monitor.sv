@@ -35,7 +35,7 @@ class stdout_monitor extends uvm_monitor;
     endfunction
 
     virtual task run_phase(uvm_phase phase);
-        // Clear buffer on reset deassertion
+        // Clear buffer on reset assertion
         fork
             forever begin
                 @(negedge vif.rst_n);
@@ -67,16 +67,20 @@ class stdout_monitor extends uvm_monitor;
 
     // Parse complete string to determine if it's an event or info
     function void parse_stdout_string(input string str);
-        int found;
         string content;
         uvm_event event_h;
+        bit is_event;
+        bit is_info;
 
         // Skip empty strings (e.g. consecutive null words)
         if (str.len() == 0) return;
 
-        // Check for "EVENT:" prefix
-        found = str.find("EVENT:");
-        if (found == 0) begin
+        // Check for "EVENT:" prefix (manual comparison for VCS compatibility)
+        is_event = (str.len() >= 6) &&
+                   (str[0] == "E") && (str[1] == "V") && (str[2] == "E") &&
+                   (str[3] == "N") && (str[4] == "T") && (str[5] == ":");
+
+        if (is_event) begin
             if (str.len() > 6)
                 content = str.substr(6, str.len() - 1);
             else
@@ -92,9 +96,12 @@ class stdout_monitor extends uvm_monitor;
             return;
         end
 
-        // Check for "INFO:" prefix
-        found = str.find("INFO:");
-        if (found == 0) begin
+        // Check for "INFO:" prefix (manual comparison for VCS compatibility)
+        is_info = (str.len() >= 5) &&
+                  (str[0] == "I") && (str[1] == "N") && (str[2] == "F") &&
+                  (str[3] == "O") && (str[4] == ":");
+
+        if (is_info) begin
             if (str.len() > 5)
                 content = str.substr(5, str.len() - 1);
             else
