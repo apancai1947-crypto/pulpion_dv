@@ -54,7 +54,7 @@ else ifeq ($(DEBUG), 1)
     DBG_OPTS := -debug_access+pp -kdb -lca
     SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm \
                 +UART_DATA_WIDTH=8 +UART_PARITY_TYPE=0 +UART_STOP_BIT=0 +UART_DISABLE_HW_HANDSHAKE
-else
+else ifeq ($(DEBUG), 2)
     DBG_OPTS := -debug_access+all -kdb -lca -fsdb +define+FSDB_DUMP
     SIM_OPTS := +TIMEOUT_NS=10000000 +UVM_VERBOSITY=$(VERBOSITY) +DUMP_WAVE +FW_SLMS=$(FW_OUT)/l2_stim.slm +FW_SLMD=$(FW_OUT)/tcdm_bank0.slm \
                 +FSDB_FILE=$(OUT)/novas.fsdb \
@@ -76,7 +76,7 @@ VCS_OPTS := $(VCS_BASE_OPTS) $(DBG_OPTS) $(XPROP_OPTS) $(COV_COMP_OPTS)
 # ============================================
 # Targets
 # ============================================
-.PHONY: fw comp sim all clean verdi dump info check-ips
+.PHONY: fw comp sim all clean verdi info check-ips
 
 all: fw comp sim
 
@@ -115,12 +115,6 @@ sim:
 	@echo "[SIM] Running $(TEST) → $(OUT)/simv.log"
 	cd $(OUT) && $(OUT)/simv $(SIM_OPTS) $(COV_SIM_OPTS) \
 	    +UVM_TESTNAME=$(TEST) -l $(OUT)/simv.log
-
-dump:
-	@echo "[SIM] Running $(TEST) with waveform dump..."
-	cd $(OUT) && $(OUT)/simv $(SIM_OPTS) +DUMP_WAVE \
-	    +FSDB_FILE=$(OUT)/novas.fsdb \
-	    $(COV_SIM_OPTS) +UVM_TESTNAME=$(TEST) -l $(OUT)/simv.log
 
 verdi:
 	cd $(OUT) && verdi -nologo -dbdir $(OUT)/simv.daidir \

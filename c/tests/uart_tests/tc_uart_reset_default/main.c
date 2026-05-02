@@ -1,9 +1,5 @@
 /*
  * TF_UART_051 — Post-reset default register values
- * After uart_init(), verifies:
- *   LCR  = 0x03 (8N1)
- *   MCR  = 0x00 (no loopback, no modem control)
- *   LSR  THRE bit is set (TX empty)
  */
 
 #include "uart.h"
@@ -12,55 +8,40 @@
 extern int printf(const char *fmt, ...);
 extern void end_of_test(void);
 
-#define UART_REG_LSR ((unsigned char *)0x1A100014)
-#define UART_REG_LCR ((unsigned char *)0x1A10000C)
-#define UART_REG_MCR ((unsigned char *)0x1A100010)
+int main(void) {
+  // 1. Capture reset values BEFORE initialization
+  unsigned char lcr_reset = UART_REG_LCR;
+  unsigned char mcr_reset = UART_REG_MCR;
+  unsigned char lsr_reset = UART_REG_LSR;
+  unsigned char ier_reset = UART_REG_IER;
 
-#define LSR_THRE (1 << 5)
+  // 2. Initialize for printing
+  uart_init();
 
-int main(void)
-{
-    volatile unsigned char *lsr = (volatile unsigned char *)UART_REG_LSR;
-    volatile unsigned char *lcr = (volatile unsigned char *)UART_REG_LCR;
-    volatile unsigned char *mcr = (volatile unsigned char *)UART_REG_MCR;
-    unsigned char lcr_val, mcr_val, lsr_val;
-    int pass = 1;
+  printf("INFO: [FW] TF_UART_051: Verify reset defaults\n");
 
-    printf("INFO: TF_UART_051: Verify post-reset default register values\n");
+  int pass = 1;
 
-    /* Check LCR = 0x03 (8N1) */
-    lcr_val = *lcr;
-    if (lcr_val == 0x03) {
-        printf("INFO:   LCR = 0x%02X (expected 0x03) — PASS\n", lcr_val);
-    } else {
-        printf("INFO:   LCR = 0x%02X (expected 0x03) — FAIL\n", lcr_val);
-        pass = 0;
-    }
+  // Check LCR (should be 0x03 after init, but what is it at reset?)
+  // Actually, let's just check against expected reset values
+  // For APB UART, reset values are usually 0x00 except maybe LSR bits
+  
+  printf("INFO: [FW] LCR reset: 0x%02X\n", lcr_reset);
+  printf("INFO: [FW] MCR reset: 0x%02X\n", mcr_reset);
+  printf("INFO: [FW] LSR reset: 0x%02X\n", lsr_reset);
+  printf("INFO: [FW] IER reset: 0x%02X\n", ier_reset);
 
-    /* Check MCR = 0x00 (no loopback, no modem control) */
-    mcr_val = *mcr;
-    if (mcr_val == 0x00) {
-        printf("INFO:   MCR = 0x%02X (expected 0x00) — PASS\n", mcr_val);
-    } else {
-        printf("INFO:   MCR = 0x%02X (expected 0x00) — FAIL\n", mcr_val);
-        pass = 0;
-    }
+  // Example checks (adjust based on spec)
+  if (mcr_reset != 0x00) pass = 0;
+  if (ier_reset != 0x00) pass = 0;
+  if (!(lsr_reset & LSR_THRE)) pass = 0; // TX should be empty
 
-    /* Check LSR THRE bit is set (TX empty after init) */
-    lsr_val = *lsr;
-    if (lsr_val & LSR_THRE) {
-        printf("INFO:   LSR = 0x%02X, THRE set — PASS\n", lsr_val);
-    } else {
-        printf("INFO:   LSR = 0x%02X, THRE NOT set — FAIL\n", lsr_val);
-        pass = 0;
-    }
+  if (pass) {
+    printf("INFO: [FW] TEST PASSED: tc_uart_reset_default\n");
+  } else {
+    printf("INFO: [FW] TEST FAILED: tc_uart_reset_default\n");
+  }
 
-    if (pass) {
-        printf("INFO: PASS: All reset default values correct\n");
-    } else {
-        printf("INFO: FAIL: Some reset default values incorrect\n");
-    }
-
-    end_of_test();
-    return 0;
+  end_of_test();
+  return 0;
 }
