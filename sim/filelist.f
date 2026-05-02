@@ -259,6 +259,9 @@ tb/env/apb_agent.sv
 // UART TUBE monitor
 tb/uart_monitor.sv
 
+// Stdout memory-mapped monitor
+tb/stdout_monitor.sv
+
 // Scoreboard and config
 tb/env/soc_scoreboard.sv
 tb/env/soc_config.sv
