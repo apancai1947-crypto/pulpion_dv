@@ -17,9 +17,21 @@ class soc_config extends uvm_object;
     int uart_stop_bit    = 0;  // 0=ONE_BIT, 1=ONE_FIVE_BIT, 2=TWO_BIT
     bit uart_disable_hw_handshake = 1;  // disable CTS/RTS, DTR/DSR handshake checking
 
+    // SPI VIP Config
+    int spi_data_width = 8;
+    bit spi_is_active  = 1;
+
+    // I2C VIP Config
+    int i2c_bus_speed = 400; // kbps
+    bit i2c_is_active = 1;
+    bit gpio_is_active = 1;
+
     // Enable flags
     bit enable_scoreboard = 1;
     bit enable_coverage   = 1;
+    bit enable_spi_vip    = 1;
+    bit enable_i2c_vip    = 1;
+    bit enable_gpio_vip   = 1;
 
     function new(string name = "soc_config");
         super.new(name);

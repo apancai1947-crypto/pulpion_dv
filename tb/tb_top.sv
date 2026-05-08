@@ -10,8 +10,10 @@ import uvm_pkg::*;
 
 module tb_top;
 
-    /** Import Uart SVT UVM Packages */
+    /** Import SVT UVM Packages */
     import svt_uart_uvm_pkg::*;
+    import svt_spi_uvm_pkg::*;
+    import svt_i2c_uvm_pkg::*;
 
     // ============================================
     // Core Selection Parameters (override via -gUSE_ZERO_RISCY=1 etc.)
@@ -60,12 +62,12 @@ module tb_top;
     logic        spi_master_csn0_o, spi_master_csn1_o, spi_master_csn2_o, spi_master_csn3_o;
     logic [1:0]  spi_master_mode_o;
     logic        spi_master_sdo0_o, spi_master_sdo1_o, spi_master_sdo2_o, spi_master_sdo3_o;
-    logic        spi_master_sdi0_i = 1'b0, spi_master_sdi1_i = 1'b0;
+    logic        spi_master_sdi0_i, spi_master_sdi1_i = 1'b0;
     logic        spi_master_sdi2_i = 1'b0, spi_master_sdi3_i = 1'b0;
 
     // I2C
-    logic scl_pad_i = 1'b1, scl_pad_o, scl_padoen_o;
-    logic sda_pad_i = 1'b1, sda_pad_o, sda_padoen_o;
+    logic scl_pad_i, scl_pad_o, scl_padoen_o;
+    logic sda_pad_i, sda_pad_o, sda_padoen_o;
 
     // UART
     logic uart_tx;
@@ -75,7 +77,7 @@ module tb_top;
     logic uart_dsr;
 
     // GPIO
-    logic [31:0] gpio_in  = '0;
+    logic [31:0] gpio_in;
     logic [31:0] gpio_out;
     logic [31:0] gpio_dir;
     logic [31:0][5:0] gpio_padcfg;
@@ -300,10 +302,31 @@ module tb_top;
     end
 
     // ============================================
-    // UART Probe Interface
+    // VIP Interfaces
     // ============================================
-    uart_if uart_probe ();
+    uart_if     uart_probe ();
+    svt_spi_if  spi_master_vif();
+    svt_i2c_if  i2c_master_vif();
+    svt_i2c_master_wrapper i2c_master_wrapper_inst(i2c_master_vif);
+    svt_gpio_if gpio_vif(.iClk(clk), .iSysRstz(rst_n), .iGPi({32'b0, gpio_out}), .oGPo());
+
+    // UART Connections
     assign uart_probe.tx = uart_tx;
+
+    // SPI Master Connections
+    assign spi_master_vif.sclk    = spi_master_clk_o;
+    assign spi_master_vif.ss_n[0] = spi_master_csn0_o;
+    assign spi_master_vif.mosi    = spi_master_sdo0_o;
+    assign spi_master_sdi0_i      = spi_master_vif.miso;
+
+    // I2C Connections (Bi-directional)
+    assign i2c_master_vif.SCL = !scl_padoen_o ? scl_pad_o : 1'bz;
+    assign scl_pad_i          = i2c_master_vif.SCL;
+    assign i2c_master_vif.SDA = !sda_padoen_o ? sda_pad_o : 1'bz;
+    assign sda_pad_i          = i2c_master_vif.SDA;
+
+    // GPIO Connections
+    assign gpio_in       = gpio_vif.oGPo[31:0];
 
     // ============================================
     // UVM Configuration & Launch
@@ -311,6 +334,9 @@ module tb_top;
     initial begin
         // Pass virtual interfaces to UVM components via config_db
         uvm_config_db#(virtual interface uart_if)::set(null, "*", "uart_vif", uart_probe);
+        uvm_config_db#(virtual svt_spi_if)::set(null, "uvm_test_top.env", "spi_vif", spi_master_vif);
+        uvm_config_db#(virtual svt_i2c_if)::set(null, "uvm_test_top.env", "i2c_vif", i2c_master_vif);
+        uvm_config_db#(virtual svt_gpio_if)::set(null, "uvm_test_top.env", "gpio_vif", gpio_vif);
         uvm_config_db#(virtual interface axi_if)::set(null, "*", "core_axi_vif",  core_axi);
         uvm_config_db#(virtual interface axi_if)::set(null, "*", "periph_axi_vif", periph_axi);
         uvm_config_db#(virtual interface apb_if)::set(null, "*", "apb_vif", apb_bus);

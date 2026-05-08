@@ -14,8 +14,11 @@ ZERO_RV32E     ?= 0
 OUT       := $(PROJ_ROOT)/debug/$(TEST)_$(CTEST)
 FW_OUT    := $(OUT)/fw
 
-# UART VIP 路径
-SVT_UART_DIR 	 ?= /opt/sv_pkgs/uvm/svt_2018.09/svt_uart
+# VIP 路径统一管理
+SVT_VIP_BASE     ?= /opt/sv_pkgs/uvm/svt_2018.09
+SVT_UART_DIR 	 ?= $(SVT_VIP_BASE)/svt_uart
+SVT_SPI_DIR  	 ?= $(SVT_VIP_BASE)/svt_spi
+SVT_I2C_DIR  	 ?= $(SVT_VIP_BASE)/svt_i2c
 
 # ============================================
 # Source file list
@@ -30,6 +33,14 @@ VCS_BASE_OPTS := -full64 -sverilog -ntb_opts uvm-1.2 \
 	+incdir+$(SVT_UART_DIR)/include/sverilog \
 	+incdir+$(SVT_UART_DIR)/src/verilog/vcs \
 	+incdir+$(SVT_UART_DIR)/src/sverilog/vcs \
+	+incdir+$(SVT_SPI_DIR)/include/verilog \
+	+incdir+$(SVT_SPI_DIR)/include/sverilog \
+	+incdir+$(SVT_SPI_DIR)/src/verilog/vcs \
+	+incdir+$(SVT_SPI_DIR)/src/sverilog/vcs \
+	+incdir+$(SVT_I2C_DIR)/include/verilog \
+	+incdir+$(SVT_I2C_DIR)/include/sverilog \
+	+incdir+$(SVT_I2C_DIR)/src/verilog/vcs \
+	+incdir+$(SVT_I2C_DIR)/src/sverilog/vcs \
     +incdir+$(PULP_ROOT)/rtl/includes \
     +incdir+$(PULP_ROOT)/tb \
     +incdir+$(PROJ_ROOT)/tb \
@@ -42,6 +53,10 @@ VCS_BASE_OPTS := -full64 -sverilog -ntb_opts uvm-1.2 \
 	+incdir+$(PULP_ROOT)/ips/apb/apb_i2c \
     +incdir+$(PULP_ROOT)/ips/adv_dbg_if/rtl \
     +incdir+$(PULP_ROOT)/ips/axi/axi_node \
+	+define+SVT_UVM_TECHNOLOGY \
+	+define+SVT_UART \
+	+define+SVT_SPI \
+	+define+SVT_I2C \
     -timescale=1ns/1ps \
     -Mdir=$(OUT)/csrc \
     +vcs+lic+wait

@@ -4,10 +4,14 @@
 `include "uvm_pkg.sv"
 `include "svt_uart_if.svi"
 `include "svt_uart.uvm.pkg"
+`include "svt_spi.uvm.pkg"
+`include "svt_i2c.uvm.pkg"
 
 import uvm_pkg::*;
 import svt_uvm_pkg::*;
 import svt_uart_uvm_pkg::*;
+import svt_spi_uvm_pkg::*;
+import svt_i2c_uvm_pkg::*;
 
 
 `include "uvm_macros.svh"
@@ -34,6 +38,21 @@ class soc_env extends uvm_env;
     svt_uart_agent               dce_agent;
     svt_uart_agent_configuration dce_cfg;
     svt_uart_vif                 dce_vif;
+
+    // SPI VIP Agent
+    svt_spi_agent                spi_agent;
+    svt_spi_agent_configuration  spi_cfg;
+    svt_spi_vif                  spi_vif;
+
+    // I2C VIP Agent
+    svt_i2c_master_agent         i2c_agent;
+    svt_i2c_agent_configuration  i2c_cfg;
+    svt_i2c_vif                  i2c_vif;
+
+    // GPIO VIP Agent
+    svt_gpio_agent               gpio_agent;
+    svt_gpio_configuration       gpio_cfg;
+    svt_gpio_vif                 gpio_vif;
 
     function new(string name = "soc_env", uvm_component parent = null);
         super.new(name, parent);
@@ -63,6 +82,14 @@ class soc_env extends uvm_env;
         if (!uvm_config_db#(svt_uart_vif)::get(this, "", "dce_vif", dce_vif))
             `uvm_fatal("ENV", "Failed to get dce_vif")
 
+        // Get SPI/I2C/GPIO VIP virtual interfaces
+        if (cfg.enable_spi_vip && !uvm_config_db#(svt_spi_vif)::get(this, "", "spi_vif", spi_vif))
+            `uvm_fatal("ENV", "Failed to get spi_vif")
+        if (cfg.enable_i2c_vip && !uvm_config_db#(svt_i2c_vif)::get(this, "", "i2c_vif", i2c_vif))
+            `uvm_fatal("ENV", "Failed to get i2c_vif")
+        if (cfg.enable_gpio_vip && !uvm_config_db#(svt_gpio_vif)::get(this, "", "gpio_vif", gpio_vif))
+            `uvm_fatal("ENV", "Failed to get gpio_vif")
+
         // Pass interfaces to agents via config_db (wildcard scope so child components can find them)
         uvm_config_db#(virtual interface axi_if)::set(this, "core_master_agent.*",  "axi_vif", core_vif);
         uvm_config_db#(virtual interface axi_if)::set(this, "periph_slave_agent.*", "axi_vif", periph_vif);
@@ -85,8 +112,8 @@ class soc_env extends uvm_env;
         dce_cfg.baud_divisor = 2;  // 25MHz/(16*2) = 781250 baud, matches PULPino UART_DIVISOR=31
 
         // Apply UART config from plusargs (via soc_config)
-        dce_cfg.data_width   = cfg.uart_data_width;
-        dce_cfg.parity_type  = cfg.uart_parity_type;
+        dce_cfg.data_width   = svt_uart_configuration::data_width_enum'(cfg.uart_data_width);
+        dce_cfg.parity_type  = svt_uart_configuration::parity_type_enum'(cfg.uart_parity_type);
         // stop_bit is an enum — cast int to enum type
         case (cfg.uart_stop_bit)
             0: dce_cfg.stop_bit = svt_uart_configuration::ONE_BIT;
@@ -109,6 +136,27 @@ class soc_env extends uvm_env;
 
         uvm_config_db#(svt_uart_agent_configuration)::set(this, "dce_agent", "cfg", dce_cfg);
         dce_agent = svt_uart_agent::type_id::create("dce_agent", this);
+
+        // SPI VIP Setup
+        if (cfg.enable_spi_vip) begin
+            spi_cfg = svt_spi_agent_configuration::type_id::create("spi_cfg");
+            spi_cfg.is_active = cfg.spi_is_active;
+            spi_cfg.spi_if = spi_vif;
+            uvm_config_db#(svt_spi_agent_configuration)::set(this, "spi_agent", "cfg", spi_cfg);
+            spi_agent = svt_spi_agent::type_id::create("spi_agent", this);
+            `uvm_info("ENV", "SPI Agent created", UVM_LOW)
+        end
+
+        // I2C VIP Setup
+        if (cfg.enable_i2c_vip) begin
+            i2c_cfg = svt_i2c_agent_configuration::type_id::create("i2c_cfg");
+            i2c_cfg.is_active = cfg.i2c_is_active;
+            i2c_cfg.set_i2c_if(i2c_vif);
+            uvm_config_db#(svt_i2c_agent_configuration)::set(this, "i2c_agent", "cfg", i2c_cfg);
+            i2c_agent = svt_i2c_master_agent::type_id::create("i2c_agent", this);
+            `uvm_info("ENV", "I2C Agent created", UVM_LOW)
+        end
+
 
 
         // Create stdout monitor (gets apb_vif from config_db globally)
