@@ -56,6 +56,7 @@ VCS_BASE_OPTS := -full64 -sverilog -ntb_opts uvm-1.2 \
 	+define+SVT_UVM_TECHNOLOGY \
 	+define+SVT_UART \
 	+define+SVT_SPI \
+	+define+SVT_SPI_IO_WIDTH=4 \
 	+define+SVT_I2C \
     -timescale=1ns/1ps \
     -Mdir=$(OUT)/csrc \
