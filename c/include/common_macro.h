@@ -76,12 +76,10 @@
 #define RAW_DATA_ADDR          0x1A111004
 #define RAW_DATA_REG           (*(volatile unsigned int *)RAW_DATA_ADDR)
 
-// Helper to send a block of data to the reference FIFO
-#define ref_data_send(ptr, len) do { \
-    for (int _i = 0; _i < (len); _i++) { \
-        RAW_DATA_REG = (ptr)[_i]; \
-    } \
-} while(0)
+/**
+ * @brief Helper to send a block of data to the reference FIFO (defined in spi_ext.c)
+ */
+extern void ref_data_send(const int *ptr, int len);
 
 // TB->C Event codes
 #define EVENT_WAIT      1
