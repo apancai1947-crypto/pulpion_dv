@@ -16,6 +16,7 @@ Superpowers skill 生成的 design spec 和 implementation plan 统一放在 `do
 
 > [!IMPORTANT]
 > **DO NOT modify any files within `repo/pulpino/`.** All verification work goes in the outer workspace: `tb/`, `sim/`, `tests/`, `test/`, `c/`, `seq_lib/`.
+> **DO NOT modify `.gitignore`.** All local-only exclusions must be handled via personal rules, not by changing the repository's configuration.
 
 ## Key Commands
 
@@ -151,3 +152,36 @@ Toolchain: `riscv64-linux-gnu-gcc` with `-march=rv32i -mabi=ilp32 -ffreestanding
 2. Add a Python Test class in `test/pulpino_uart_test.py` (inherit from `uart_base_test` or similar)
 3. The Python class sets `c_test = "<name>"` and optionally `c_defines` for compile-time config
 4. For loopback tests, inherit from `tc_uart_loopback_test` (which uses `uart_loopback_build`)
+
+## Synopsys VIP Integration & Environment
+
+### Environment Variables & Paths
+
+- **DESIGNWARE_HOME**: Must be set to `/usr/Synopsys/vip_2018_09` (inside Docker).
+- **VIP Installation Root**: All VIPs are installed in `/opt/sv_pkgs/designware_home`.
+- **Docker Container**: All compilation and simulation MUST be executed inside the `my_eda` container.
+
+### VIP Setup Rules
+
+- **dw_vip_setup**: When installing new VIPs, ensure the script is patched to use `read var` instead of `read` for compatibility with non-interactive shells.
+- **Library Include**: VIP packages are typically included in `tb/tb_top.sv` and `tb/env/soc_env.sv` using paths relative to `/opt/sv_pkgs/designware_home`.
+
+### Peripheral VIP Specifics
+
+#### I2C VIP
+- **Registration**: `svt_i2c_master_wrapper` MUST be instantiated in `tb_top.sv` and connected to the interface to satisfy the VIP's internal component registration.
+- **Connectivity**: I2C signals (SCL/SDA) in `tb_top.sv` are defined as `wand` (wired-and) to handle bidirectional open-drain contention between VIP and RTL.
+
+#### UART VIP
+- **Mode**: Configured as DCE (Data Communication Equipment) to act as the terminal receiver for PULPino's DTE UART.
+- **Type Safety**: Use `static cast` (e.g., `svt_uart_configuration::data_width_enum'(val)`) when assigning integer plusargs to VIP configuration enums in `soc_env.sv`.
+
+#### SPI VIP
+- **Mode**: Currently integrated as a Master agent.
+
+#### GPIO VIP
+- **Status**: **DISABLED**. Currently triggers a `UVM_FATAL` ("Agent cannot be passive") during the build phase despite `is_active` settings. Do not enable without further investigation into the specific `svt_gpio_configuration` requirements.
+
+### Coding Style & Constraints
+- **Absolute Paths in config_db**: When setting VIP configurations in `soc_env.sv`, prefer absolute paths (e.g., `uvm_test_top.env.i2c_agent`) to avoid scoping issues during multi-agent initialization.
+- **No static initializations**: Do not use `logic scl = 1;` for signals driven by `assign` or VIP interfaces in `tb_top.sv`, as this causes `Error-[ICPSD]` (procedural vs structural driver conflicts).

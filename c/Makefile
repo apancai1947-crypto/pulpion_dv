@@ -58,15 +58,18 @@ STARTUP  = $(PRJ_ROOT)/sys/startup.S
 RETARGET = $(PRJ_ROOT)/lib/retarget.c
 IRQ      = $(PRJ_ROOT)/lib/irq.c
 UART     = $(PRJ_ROOT)/lib/uart.c
+PULP_SRC = $(PRJ_ROOT)/../repo/pulpino/sw/libs/sys_lib/src
+SPI      = $(PULP_SRC)/spi.c
+GPIO     = $(PULP_SRC)/gpio.c
 LINK_LD  = $(PRJ_ROOT)/sys/link.ld
 
-# 测试用例主程序源文件
-TEST_DIR = $(PRJ_ROOT)/tests/uart_tests/$(CTEST)
+# 测试用例主程序源文件：在 tests 目录下递归搜索匹配 CTEST 的目录
+TEST_DIR = $(shell find $(PRJ_ROOT)/tests -name $(CTEST) -type d | head -n 1)
 TEST_SRC = $(TEST_DIR)/main.c
 
-# 完整源文件列表：启动代码 + 测试主程序 + 库文件
+# 完整源文件列表：启动代码 + 测试主程序 + 库文件 + 原始 SPI/GPIO 驱动
 # 链接顺序影响不大（-T 使用链接脚本控制布局），但启动代码必须包含
-SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ) $(UART)
+SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ) $(UART) $(SPI) $(GPIO)
 
 # ---------------------------------------------------------------------------
 # 编译选项

@@ -17,11 +17,21 @@ def _build_incdir_opts(proj_root):
     """Build +incdir+ options for VCS from project root."""
     pulp_root = os.path.join(proj_root, "repo", "pulpino")
     svt_uart_dir = "/opt/sv_pkgs/uvm/svt_2018.09/svt_uart"
+    svt_spi_dir  = "/opt/sv_pkgs/uvm/svt_2018.09/svt_spi"
+    svt_i2c_dir  = "/opt/sv_pkgs/uvm/svt_2018.09/svt_i2c"
     dirs = [
         os.path.join(svt_uart_dir, "include", "verilog"),
         os.path.join(svt_uart_dir, "include", "sverilog"),
         os.path.join(svt_uart_dir, "src", "verilog", "vcs"),
         os.path.join(svt_uart_dir, "src", "sverilog", "vcs"),
+        os.path.join(svt_spi_dir, "include", "verilog"),
+        os.path.join(svt_spi_dir, "include", "sverilog"),
+        os.path.join(svt_spi_dir, "src", "verilog", "vcs"),
+        os.path.join(svt_spi_dir, "src", "sverilog", "vcs"),
+        os.path.join(svt_i2c_dir, "include", "verilog"),
+        os.path.join(svt_i2c_dir, "include", "sverilog"),
+        os.path.join(svt_i2c_dir, "src", "verilog", "vcs"),
+        os.path.join(svt_i2c_dir, "src", "sverilog", "vcs"),
         os.path.join(pulp_root, "rtl", "includes"),
         os.path.join(pulp_root, "tb"),
         os.path.join(proj_root, "tb"),
