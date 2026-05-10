@@ -7,7 +7,6 @@
  *   TEST_IRQ_CLEAR : 0=trigger only, 1=trigger and clear (default: 0)
  */
 #include "spi.h"
-#include "uart.h"
 #include "common_macro.h"
 #include "irq.h"
 
@@ -42,7 +41,6 @@ int main() {
     int tx_data[1] = {0xCAFEBABE};
     int status, wait_cnt;
 
-    uart_init();
     printf("INFO:UVM_INFO: [FW] SPI IRQ Test started. TEST_IRQ_CLEAR=%d\n", TEST_IRQ_CLEAR);
 
     *(volatile int *)(SPI_REG_CLKDIV) = 10;

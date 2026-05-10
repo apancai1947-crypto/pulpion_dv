@@ -8,7 +8,6 @@
  * correctly detects a timeout condition.
  */
 #include "spi.h"
-#include "uart.h"
 #include "common_macro.h"
 
 /* Short timeout for this test (50k iterations) */
@@ -19,7 +18,6 @@ int main() {
     int rx_data[1];
     int timed_out = 0;
 
-    uart_init();
     printf("INFO:UVM_INFO: [FW] SPI Timeout Test started.\n");
 
     *(volatile int *)(SPI_REG_CLKDIV) = 10;

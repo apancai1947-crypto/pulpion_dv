@@ -7,7 +7,6 @@
  *   TEST_MODE : 0=TX FIFO fill-then-send, 1=RX FIFO drain (default: 0)
  */
 #include "spi.h"
-#include "uart.h"
 #include "common_macro.h"
 
 #ifndef TEST_MODE
@@ -20,7 +19,6 @@
 int main() {
     int i, status, wait_cnt;
 
-    uart_init();
     printf("INFO:UVM_INFO: [FW] SPI FIFO Stress Test started. MODE=%d\n", TEST_MODE);
 
     *(volatile int *)(SPI_REG_CLKDIV) = 10;

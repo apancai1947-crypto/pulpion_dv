@@ -8,7 +8,6 @@
  *   TEST_MULTI_CS : 0=single CS, 1=multi CS switch (default: 0)
  */
 #include "spi.h"
-#include "uart.h"
 #include "common_macro.h"
 
 #ifndef TARGET_CS
@@ -44,7 +43,6 @@ static void do_transaction(int cs, int data_word) {
 }
 
 int main() {
-    uart_init();
     printf("INFO:UVM_INFO: [FW] SPI CS Control Test started.\n");
     printf("INFO:UVM_INFO: [FW] TARGET_CS=%d  TEST_MULTI_CS=%d\n",
            TARGET_CS, TEST_MULTI_CS);

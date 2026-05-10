@@ -10,7 +10,6 @@
  *   CFG_DUMMY    : dummy cycles           (default: 0)
  */
 #include "spi.h"
-#include "uart.h"
 #include "common_macro.h"
 
 #ifndef CFG_CLKDIV
@@ -34,7 +33,6 @@ int main() {
     int tx_data[1] = {0xA5B6C7D8};
     int rx_data[1];
 
-    uart_init();
     printf("INFO:UVM_INFO: [FW] SPI Frame Config Test started.\n");
     printf("INFO:UVM_INFO: [FW] CLKDIV=%d  CMDLEN=%d  ADDRLEN=%d  DUMMY=%d\n",
            CFG_CLKDIV, CFG_CMDLEN, CFG_ADDRLEN, CFG_DUMMY);
