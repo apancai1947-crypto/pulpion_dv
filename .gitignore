@@ -3,7 +3,6 @@
 # User Specific Exclusions
 debug/
 sim/build/
-doc/0418_conversation.md
 
 # VCS Build Output
 csrc/
@@ -32,7 +31,7 @@ __pycache__/
 # OS Files
 .DS_Store
 Thumbs.db
-. w o r k t r e e s /  
+.worktrees/
 
 # AI Assistant files
 *[Cc][Ll][Aa][Uu][Dd][Ee]*
