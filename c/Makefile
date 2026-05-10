@@ -61,6 +61,7 @@ UART     = $(PRJ_ROOT)/lib/uart.c
 PULP_SRC = $(PRJ_ROOT)/../repo/pulpino/sw/libs/sys_lib/src
 SPI      = $(PULP_SRC)/spi.c
 GPIO     = $(PULP_SRC)/gpio.c
+SPI_EXT  = $(PRJ_ROOT)/lib/spi_ext.c
 LINK_LD  = $(PRJ_ROOT)/sys/link.ld
 
 # 测试用例主程序源文件：在 tests 目录下递归搜索匹配 CTEST 的目录
@@ -69,7 +70,7 @@ TEST_SRC = $(TEST_DIR)/main.c
 
 # 完整源文件列表：启动代码 + 测试主程序 + 库文件 + 原始 SPI/GPIO 驱动
 # 链接顺序影响不大（-T 使用链接脚本控制布局），但启动代码必须包含
-SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ) $(UART) $(SPI) $(GPIO)
+SRCS = $(STARTUP) $(TEST_SRC) $(RETARGET) $(IRQ) $(UART) $(SPI) $(GPIO) $(SPI_EXT)
 
 # ---------------------------------------------------------------------------
 # 编译选项
