@@ -12,8 +12,12 @@ module tb_top;
 
     /** Import SVT UVM Packages */
     import svt_uart_uvm_pkg::*;
+`ifdef SPI_VIP_EN
     import svt_spi_uvm_pkg::*;
+`endif
+`ifdef I2C_VIP_EN
     import svt_i2c_uvm_pkg::*;
+`endif
 
     // ============================================
     // Core Selection Parameters (override via -gUSE_ZERO_RISCY=1 etc.)
@@ -305,16 +309,40 @@ module tb_top;
     // VIP Interfaces
     // ============================================
     uart_if     uart_probe ();
+`ifdef SPI_VIP_EN
     svt_spi_if  spi_master_vif();
     svt_spi_if  spi_slave_vif();
+`endif
+`ifdef I2C_VIP_EN
     svt_i2c_if  i2c_master_vif();
     svt_i2c_master_wrapper i2c_master_wrapper_inst(i2c_master_vif);
+`endif
     svt_gpio_if gpio_vif(.iClk(clk), .iSysRstz(rst_n), .iGPi({32'b0, gpio_out}), .oGPo());
 
     // UART Connections
     assign uart_probe.tx = uart_tx;
 
+    // Debug: SPI SCLK counter
+    int sclk_debug_cnt;
+    always @(posedge spi_master_clk_o or negedge spi_master_clk_o) begin
+        if (!spi_master_csn0_o) begin
+            sclk_debug_cnt++;
+            $display("[DEBUG_TB] @%0t: SCLK edge detected, count=%0d", $time, sclk_debug_cnt);
+        end
+        else sclk_debug_cnt = 0;
+    end
+    always @(posedge spi_master_csn0_o) begin
+        $display("[DEBUG_TB] @%0t: SPI CSN0 went high. SCLK edges seen: %0d", $time, sclk_debug_cnt);
+    end
+    always @(spi_master_clk_o) begin
+        $display("[DEBUG_TB] @%0t: SPI SCLK changed to %b", $time, spi_master_clk_o);
+    end
+    always @(spi_master_sdo0_o) begin
+        $display("[DEBUG_TB] @%0t: SPI MOSI changed to %b", $time, spi_master_sdo0_o);
+    end
+
     // SPI Master Connections (QSPI 4-bit)
+`ifdef SPI_VIP_EN
     assign spi_master_vif.sclk    = spi_master_clk_o;
     assign spi_master_vif.ss_n[0] = spi_master_csn0_o;
     
@@ -341,12 +369,15 @@ module tb_top;
     assign spi_slave_vif.miso[1]  = spi_sdo1_o;
     assign spi_slave_vif.miso[2]  = spi_sdo2_o;
     assign spi_slave_vif.miso[3]  = spi_sdo3_o;
+`endif
 
     // I2C Connections (Bi-directional)
+`ifdef I2C_VIP_EN
     assign i2c_master_vif.SCL = !scl_padoen_o ? scl_pad_o : 1'bz;
     assign scl_pad_i          = i2c_master_vif.SCL;
     assign i2c_master_vif.SDA = !sda_padoen_o ? sda_pad_o : 1'bz;
     assign sda_pad_i          = i2c_master_vif.SDA;
+`endif
 
     // GPIO Connections
     assign gpio_in       = gpio_vif.oGPo[31:0];
@@ -357,9 +388,13 @@ module tb_top;
     initial begin
         // Pass virtual interfaces to UVM components via config_db
         uvm_config_db#(virtual interface uart_if)::set(null, "*", "uart_vif", uart_probe);
+`ifdef SPI_VIP_EN
         uvm_config_db#(virtual svt_spi_if)::set(null, "uvm_test_top.env", "spi_master_vif", spi_master_vif);
         uvm_config_db#(virtual svt_spi_if)::set(null, "uvm_test_top.env", "spi_slave_vif",  spi_slave_vif);
+`endif
+`ifdef I2C_VIP_EN
         uvm_config_db#(virtual svt_i2c_if)::set(null, "uvm_test_top.env", "i2c_vif", i2c_master_vif);
+`endif
         uvm_config_db#(virtual svt_gpio_if)::set(null, "uvm_test_top.env", "gpio_vif", gpio_vif);
         uvm_config_db#(virtual interface axi_if)::set(null, "*", "core_axi_vif",  core_axi);
         uvm_config_db#(virtual interface axi_if)::set(null, "*", "periph_axi_vif", periph_axi);

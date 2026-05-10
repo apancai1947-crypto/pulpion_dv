@@ -72,6 +72,17 @@
 #define EVENT_TB2C_STATUS_ADDR 0x1A111004
 #define EVENT_TB2C_STATUS_REG (*(volatile unsigned int *)EVENT_TB2C_STATUS_ADDR)
 
+// C->TB Raw data port: C firmware writes reference data here
+#define RAW_DATA_ADDR          0x1A111004
+#define RAW_DATA_REG           (*(volatile unsigned int *)RAW_DATA_ADDR)
+
+// Helper to send a block of data to the reference FIFO
+#define ref_data_send(ptr, len) do { \
+    for (int _i = 0; _i < (len); _i++) { \
+        RAW_DATA_REG = (ptr)[_i]; \
+    } \
+} while(0)
+
 // TB->C Event codes
 #define EVENT_WAIT      1
 #define EVENT_CONTINUE  2

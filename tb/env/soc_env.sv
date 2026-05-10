@@ -4,14 +4,22 @@
 `include "uvm_pkg.sv"
 `include "svt_uart_if.svi"
 `include "svt_uart.uvm.pkg"
+`ifdef SPI_VIP_EN
 `include "svt_spi.uvm.pkg"
+`endif
+`ifdef I2C_VIP_EN
 `include "svt_i2c.uvm.pkg"
+`endif
 
 import uvm_pkg::*;
 import svt_uvm_pkg::*;
 import svt_uart_uvm_pkg::*;
+`ifdef SPI_VIP_EN
 import svt_spi_uvm_pkg::*;
+`endif
+`ifdef I2C_VIP_EN
 import svt_i2c_uvm_pkg::*;
+`endif
 
 
 `include "uvm_macros.svh"
@@ -39,6 +47,7 @@ class soc_env extends uvm_env;
     svt_uart_agent_configuration dce_cfg;
     svt_uart_vif                 dce_vif;
 
+`ifdef SPI_VIP_EN
     // SPI Master VIP Agent (Slave Role)
     svt_spi_agent                spi_master_agent;
     svt_spi_agent_configuration  spi_master_cfg;
@@ -48,11 +57,14 @@ class soc_env extends uvm_env;
     svt_spi_agent                spi_slave_agent;
     svt_spi_agent_configuration  spi_slave_cfg;
     svt_spi_vif                  spi_slave_vif;
+`endif
 
+`ifdef I2C_VIP_EN
     // I2C VIP Agent
     svt_i2c_master_agent         i2c_agent;
     svt_i2c_agent_configuration  i2c_cfg;
     svt_i2c_vif                  i2c_vif;
+`endif
 
     // GPIO VIP Agent
     svt_gpio_agent               gpio_agent;
@@ -88,6 +100,7 @@ class soc_env extends uvm_env;
             `uvm_fatal("ENV", "Failed to get dce_vif")
 
         // Get SPI/I2C/GPIO VIP virtual interfaces
+`ifdef SPI_VIP_EN
         // Get SPI Master VIP virtual interface
         if (cfg.enable_spi_master_vip && !uvm_config_db#(svt_spi_vif)::get(this, "", "spi_master_vif", spi_master_vif))
             `uvm_fatal("ENV", "Failed to get spi_master_vif")
@@ -95,8 +108,11 @@ class soc_env extends uvm_env;
         // Get SPI Slave VIP virtual interface
         if (cfg.enable_spi_slave_vip && !uvm_config_db#(svt_spi_vif)::get(this, "", "spi_slave_vif", spi_slave_vif))
             `uvm_fatal("ENV", "Failed to get spi_slave_vif")
+`endif
+`ifdef I2C_VIP_EN
         if (cfg.enable_i2c_vip && !uvm_config_db#(svt_i2c_vif)::get(this, "", "i2c_vif", i2c_vif))
             `uvm_fatal("ENV", "Failed to get i2c_vif")
+`endif
         if (cfg.enable_gpio_vip && !uvm_config_db#(svt_gpio_vif)::get(this, "", "gpio_vif", gpio_vif))
             `uvm_fatal("ENV", "Failed to get gpio_vif")
 
@@ -147,23 +163,31 @@ class soc_env extends uvm_env;
         uvm_config_db#(svt_uart_agent_configuration)::set(this, "dce_agent", "cfg", dce_cfg);
         dce_agent = svt_uart_agent::type_id::create("dce_agent", this);
 
-        // SPI Master VIP Setup (Slave Role - simulating Flash)
+`ifdef SPI_VIP_EN
+        // SPI Master VIP Setup (Passive Slave Monitor - listening to PULPino SPI Master)
         if (cfg.enable_spi_master_vip) begin
             spi_master_cfg = svt_spi_agent_configuration::type_id::create("spi_master_cfg");
-            spi_master_cfg.is_active = cfg.spi_master_is_active;
-            spi_master_cfg.spi_if = spi_master_vif;
-            
-            // Set role to Slave (since it connects to DUT Master)
-            spi_master_cfg.is_master = 0;
-            
-            // Enable QSPI/Multilane mode if requested
-            if (cfg.enable_qspi_mode) begin
-                spi_master_cfg.frame_format = svt_spi_types::SPI_MULTILANE;
-            end
+            spi_master_cfg.is_active     = 0;           // Passive monitor
+            spi_master_cfg.is_master     = 0;           // Slave role: monitors Master output
+            spi_master_cfg.spi_if        = spi_master_vif;
+
+            // Standard SPI mode (not Flash): must set frame_format explicitly
+            spi_master_cfg.frame_format  = svt_spi_types::SPI_STD;
+            // SPI Mode 0: CPOL=0, CPHA=0
+            spi_master_cfg.operation_mode = svt_spi_types::SPI_MODE_0;
+            // Enable configurable frame width (REQUIRED or data_frame_width has no effect)
+            spi_master_cfg.enable_configurable_data_frame_width = 1;
+            // PULPino CMD phase uses a separate register (not SCLK), only DATA=32bits on MOSI
+            spi_master_cfg.data_frame_width  = 32;
+            // PULPino transmits MSB-first; set BIG_ENDIAN so VIP stores data[0] correctly
+            spi_master_cfg.bit_endianness    = svt_spi_types::BIG_ENDIAN;
+
+            spi_master_cfg.enable_txrx_reporting = 1;
+            spi_master_cfg.enable_txrx_chk       = 0;  // Disable Flash protocol checks
 
             uvm_config_db#(svt_spi_agent_configuration)::set(this, "spi_master_agent", "cfg", spi_master_cfg);
             spi_master_agent = svt_spi_agent::type_id::create("spi_master_agent", this);
-            `uvm_info("ENV", "SPI Master Agent created", UVM_LOW)
+            `uvm_info("ENV", "SPI Master Agent created (passive, STD mode, 40-bit frame)", UVM_LOW)
         end
 
         // SPI Slave VIP Setup (Master Role - simulating Host)
@@ -184,6 +208,9 @@ class soc_env extends uvm_env;
             spi_slave_agent = svt_spi_agent::type_id::create("spi_slave_agent", this);
             `uvm_info("ENV", "SPI Slave Agent created", UVM_LOW)
         end
+`endif
+
+`ifdef I2C_VIP_EN
         if (cfg.enable_i2c_vip) begin
             i2c_cfg = svt_i2c_agent_configuration::type_id::create("i2c_cfg");
             i2c_cfg.is_active = cfg.i2c_is_active;
@@ -192,6 +219,7 @@ class soc_env extends uvm_env;
             i2c_agent = svt_i2c_master_agent::type_id::create("i2c_agent", this);
             `uvm_info("ENV", "I2C Agent created", UVM_LOW)
         end
+`endif
 
 
 

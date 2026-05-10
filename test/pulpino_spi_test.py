@@ -16,6 +16,8 @@ class spi_base_build(Build):
         "-timescale=1ns/1ps "
         "+define+SVT_SPI_IO_WIDTH=4 "
         "+define+SVT_SPI_MAX_NUM_SLAVES=4 "
+        "+define+SVT_SPI_DATA_WIDTH=32 "
+        "+define+SPI_VIP_EN "
     )
     elab_opt = "-debug_access+pp"
     simulator = "vcs"

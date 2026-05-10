@@ -17,6 +17,7 @@ class stdout_monitor extends uvm_monitor;
     // Analysis port for scoreboard
     uvm_analysis_port #(string) info_ap;
     uvm_analysis_port #(string) event_ap;
+    uvm_analysis_port #(logic [31:0]) ref_data_ap;
 
     // String accumulation buffer
     string stdout_str;
@@ -28,6 +29,7 @@ class stdout_monitor extends uvm_monitor;
         super.new(name, parent);
         info_ap = new("info_ap", this);
         event_ap = new("event_ap", this);
+        ref_data_ap = new("ref_data_ap", this);
         stdout_str = "";
         eot_event = new("eot_event");
         `uvm_info("STDOUT_MON", "stdout_monitor created", UVM_LOW)
@@ -80,6 +82,11 @@ class stdout_monitor extends uvm_monitor;
                         end
                     end
                 end
+            end else if (vif.rst_n && vif.psel && vif.penable && vif.pready && vif.pwrite &&
+                       vif.paddr == 32'h1A111004 && !$isunknown(vif.pwdata)) begin
+                // Raw Data Port - write to reference FIFO
+                `uvm_info("STDOUT_MON", $sformatf("RAW DATA received: 0x%08h", vif.pwdata), UVM_LOW)
+                ref_data_ap.write(vif.pwdata);
             end
         end
     endtask

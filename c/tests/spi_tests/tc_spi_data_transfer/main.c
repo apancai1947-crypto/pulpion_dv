@@ -73,16 +73,14 @@ int main() {
     /* Pin mux */
     spi_setup_master(1);
 
-    /* Command / address setup */
-    spi_setup_cmd_addr(SPI_CMD_TYPE, 8, 0x0, 0);
+    /* Command / address setup - DISABLE for raw transfer */
+    spi_setup_cmd_addr(0, 0, 0, 0);
     spi_set_datalen(datalen_bits);
 
     if (is_write) {
         fill_pattern(data, DATA_WORDS);
-        printf("INFO:UVM_INFO: [FW] TX data:");
-        for (i = 0; i < DATA_WORDS; i++)
-            printf(" 0x%x", data[i]);
-        printf("\n");
+        // Send to reference FIFO for self-checking
+        ref_data_send(data, DATA_WORDS);
 
         spi_write_fifo(data, datalen_bits);
         spi_start_transaction(SPI_CMD_TYPE, SPI_CSN0);
@@ -106,10 +104,8 @@ int main() {
 
     if (!is_write) {
         spi_read_fifo(rx_data, datalen_bits);
-        printf("INFO:UVM_INFO: [FW] RX data:");
-        for (i = 0; i < DATA_WORDS; i++)
-            printf(" 0x%x", rx_data[i]);
-        printf("\n");
+        // Send read data to reference FIFO for self-checking
+        ref_data_send(rx_data, DATA_WORDS);
     }
 
     printf("INFO:UVM_INFO: [FW] SPI transaction completed. STATUS=0x%x\n", status);
