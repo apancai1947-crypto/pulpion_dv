@@ -18,7 +18,10 @@ Selected via `USE_ZERO_RISCY` parameter (0=RISCY, 1=zero-riscy).
 ### Prerequisites
 
 - Synopsys VCS (simulator)
-- Synopsys SVT UART VIP (`/opt/sv_pkgs/uvm/svt_2018.09/svt_uart`)
+- Synopsys SVT VIPs:
+  - UART (`svt_uart`)
+  - SPI (`svt_spi`)
+  - I2C, GPIO (optional)
 - `riscv64-linux-gnu-gcc` toolchain
 - Python 3.6+
 
@@ -28,27 +31,17 @@ Selected via `USE_ZERO_RISCY` parameter (0=RISCY, 1=zero-riscy).
 # List all available tests
 python sim/run_case.py --list
 
-# Run a single test
+# Run a single UART test
 python sim/run_case.py tc_uart_tx_single_test
 
-# Run all UART tests
-python sim/run_case.py --tag uart
+# Run SPI parameterized tests
+python sim/run_case.py tc_spi_data_transfer
 
-# Run loopback tests
-python sim/run_case.py --tag loopback
+# Run all tests with a specific tag
+python sim/run_case.py --tag spi
 
 # Parallel jobs (default 10)
 python sim/run_case.py tc_uart_hello_test -j 4
-
-# Dry run (print commands without executing)
-python sim/run_case.py --list --tag uart
-```
-
-### Run from Docker (Windows host)
-
-```bash
-./windows_docker_bridge.bat          # interactive shell
-./windows_docker_bridge_ci.bat <test>  # CI bridge
 ```
 
 ### Legacy Makefile Flow
@@ -76,14 +69,12 @@ make verdi # open Verdi viewer
 ```
 python sim/run_case.py <test_spec>
   -> discovers test/*.py -> Build + Test classes
-  -> auto-generates prerun: make -C c CTEST=<c_test> -> firmware.slm
+  -> auto-generates firmware: make -C c CTEST=<c_test> -> firmware.slm
   -> VCS compiles RTL (sim/filelist.f) -> simv
   -> runs simv with +UVM_TESTNAME + plusargs
      -> tb_top.sv: backdoor memory preload ($readmemh firmware.slm)
      -> CPU boots from 0x80, C firmware runs on RISC-V core
-     -> uart_monitor samples uart_tx pin -> bytes to scoreboard
-     -> SVT UART VIP DCE: loopback TX->RX via uart_dce_rx_sequence
-     -> scoreboard: parses "TEST PASSED"/"TEST FAILED" strings
+     -> Scoreboard: monitors bus activity or UART strings for PASS/FAIL
 ```
 
 ### UVM Environment
@@ -93,9 +84,12 @@ soc_env
 +-- axi_agent (core_master_agent)    <- Passive, monitors core2axi
 +-- axi_agent (periph_slave_agent)   <- Passive, monitors peripherals
 +-- apb_agent (apb_mon_agent)        <- Passive, monitors APB bus
-+-- uart_monitor                     <- Bit-level TX sampling -> scoreboard
-+-- svt_uart_agent (dce_agent)       <- Synopsys SVT UART VIP DCE (active)
-+-- soc_scoreboard                   <- Parses UART output for PASS/FAIL/EOT
++-- uart_mon                         <- Bit-level sampling for UART TUBE
++-- stdout_mon                       <- APB write monitor for printf debugging
++-- svt_uart_agent (dce_agent)       <- Synopsys SVT UART VIP
++-- svt_spi_agent (spi_master_agent) <- Synopsys SVT SPI VIP (Slave role)
++-- svt_spi_agent (spi_slave_agent)  <- Synopsys SVT SPI VIP (Master role)
++-- soc_scoreboard                   <- Global verification scoreboard
 ```
 
 ### Boot Sequence (Force-based, no JTAG)
@@ -109,37 +103,31 @@ soc_env
 ```
 pulpino_dv/
 +-- c/                    # C firmware for tests
-|   +-- lib/              # uart_init(), retarget, linker scripts
-|   +-- tests/uart_tests/ # individual test programs (main.c each)
+|   +-- tests/uart_tests/ # UART test programs
+|   +-- tests/spi_tests/  # SPI parameterized test programs
 +-- test/                 # Python Build/Test class definitions
 +-- sim/
-|   +-- run_case.py       # main entry: test discovery, compile, run
-|   +-- case_manager/     # base.py, discovery.py, runner.py, cli.py
-|   +-- filelist.f        # VCS compile file list
-|   +-- Makefile           # legacy Makefile flow
-+-- tb/                   # UVM testbench: tb_top.sv, env, agents
+|   +-- run_case.py       # main entry for regression and debug
+|   +-- case_manager/     # discovery, runner, and CLI logic
++-- tb/                   # UVM testbench structure
+|   +-- env/              # soc_env, scoreboard, agents
 +-- tests/                # UVM test classes (.sv)
-+-- seq_lib/              # UVM sequences
 +-- repo/pulpino/         # git submodule (DO NOT MODIFY)
 ```
 
 ## Adding a New Test
 
-1. Create `c/tests/uart_tests/<name>/main.c` with firmware test logic
-2. Add a Python Test class in `test/pulpino_uart_test.py`
-3. Set `c_test = "<name>"` and optionally `c_defines` for compile-time config
-4. For loopback tests, inherit from `tc_uart_loopback_test`
+1. Create firmware in `c/tests/<module>_tests/<name>/main.c`.
+2. Add a Python Test class in `test/pulpino_<module>_test.py`.
+3. Inherit from base classes to leverage parallel sim and auto-compilation.
 
 ## Key Configuration
 
 | Parameter | Default | Notes |
 |-----------|---------|-------|
 | `USE_ZERO_RISCY` | 0 | 0=RISCY, 1=zero-riscy |
-| `UART_DIVISOR` | 31 | Baud = 25MHz/32 = 781250 |
-| `TIMEOUT_NS` | 10000000 | Watchdog (10ms simulated) |
-| `+define+VERILATOR` | always set | Selects SV UART IP (not VHDL) |
-
-Toolchain: `riscv64-linux-gnu-gcc` with `-march=rv32i -mabi=ilp32 -ffreestanding`. Simulator: Synopsys VCS. VIP: Synopsys SVT UART.
+| `UART_DIVISOR` | 31 | Baud rate config |
+| `TIMEOUT_NS` | 10000000 | Watchdog timeout |
 
 ## Rules
 
